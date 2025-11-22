@@ -61,10 +61,21 @@ setup(
             "sphinx-rtd-theme>=1.0.0",
             "sphinx-autodoc-typehints>=1.18.0",
         ],
+        "viz": [
+            "networkx>=2.6.0",
+            "plotly>=5.0.0",
+        ],
         "all": [
             "transformers>=4.20.0",
             "timm>=0.6.0",
             "torch-geometric>=2.0.0",
+            "networkx>=2.6.0",
+            "plotly>=5.0.0",
+        ],
+    },
+    entry_points={
+        "console_scripts": [
+            "uni-layer=uni_layer.cli:main",
         ],
     },
     include_package_data=True,

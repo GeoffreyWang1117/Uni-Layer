@@ -20,6 +20,12 @@ from uni_layer.metrics.representation.jacobian_rank import JacobianRank
 # Robustness metrics
 from uni_layer.metrics.robustness.droplayer import DropLayerRobustness
 
+# Bayesian metrics
+from uni_layer.metrics.bayesian.laplace_posterior import LaplacePosterior
+
+# Architecture-specific metrics
+from uni_layer.metrics.architecture_specific.attention_flow import AttentionFlow
+
 __all__ = [
     # Optimization
     "GradientNorm",
@@ -36,4 +42,8 @@ __all__ = [
     "JacobianRank",
     # Robustness
     "DropLayerRobustness",
+    # Bayesian
+    "LaplacePosterior",
+    # Architecture-Specific
+    "AttentionFlow",
 ]
