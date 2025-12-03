@@ -94,6 +94,56 @@ pruning_strategy = analyzer.get_pruning_strategy(contributions)
 distillation_layers = analyzer.get_distillation_layers(contributions, top_k=6)
 ```
 
+## 🗜️ Model Compression Tools
+
+Uni-Layer provides production-ready compression utilities that leverage layer contribution analysis:
+
+### 1. **Intelligent Pruning**
+Remove redundant weights/neurons with differential strategies based on layer importance.
+
+```python
+from uni_layer.compression import LayerPruner, PruningStrategy
+
+pruner = LayerPruner(model, contributions, strategy=PruningStrategy.GRADIENT_NORM)
+pruned_model = pruner.prune_unstructured(pruning_ratios)
+
+# Achieve 50%+ sparsity with minimal accuracy loss
+stats = pruner.get_sparsity_stats()
+speedup = pruner.estimate_speedup()
+```
+
+### 2. **Knowledge Distillation**
+Distill large models into smaller ones with automatic layer selection.
+
+```python
+from uni_layer.compression import KnowledgeDistiller, DistillationConfig
+
+config = DistillationConfig(temperature=4.0, alpha=0.7, top_k_layers=3)
+distiller = KnowledgeDistiller(teacher, student, contributions, config)
+
+# Auto-selects important layers based on CKA/GradNorm
+for inputs, labels in data_loader:
+    loss_components = distiller.train_step(inputs, labels, optimizer)
+```
+
+### 3. **Parameter-Efficient Fine-Tuning (PEFT)**
+Fine-tune with LoRA/Adapters using optimal layer selection and adaptive ranks.
+
+```python
+from uni_layer.compression import PEFTOptimizer, AdapterConfig
+
+config = AdapterConfig(method="lora", rank=8, adaptive_rank=True)
+peft_optimizer = PEFTOptimizer(model, contributions, config)
+
+# Auto-selects layers and computes adaptive ranks
+model_with_lora = peft_optimizer.inject_lora(selected_layers, ranks)
+
+# 10-100x fewer trainable parameters
+efficiency = peft_optimizer.get_parameter_efficiency()
+```
+
+**See [Compression Guide](docs/COMPRESSION.md) for detailed documentation.**
+
 ## 🔬 Supported Model Categories
 
 | Category | Models | Status |
@@ -150,6 +200,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Paper](https://arxiv.org/abs/xxx)
 - [Examples](examples/)
 - [API Reference](docs/api.md)
+- [Compression Guide](docs/COMPRESSION.md)
+- [中文文档](README_CN.md)
 
 ## 🙏 Acknowledgments
 

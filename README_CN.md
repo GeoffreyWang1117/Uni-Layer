@@ -112,6 +112,56 @@ pruning_strategy = analyzer.get_pruning_strategy(contributions)
 distillation_layers = analyzer.get_distillation_layers(contributions, top_k=6)
 ```
 
+## 🗜️ 模型压缩工具
+
+Uni-Layer 提供了生产就绪的压缩工具，利用层贡献度分析实现智能压缩：
+
+### 1. **智能剪枝**
+基于层重要性使用差异化策略移除冗余权重/神经元。
+
+```python
+from uni_layer.compression import LayerPruner, PruningStrategy
+
+pruner = LayerPruner(model, contributions, strategy=PruningStrategy.GRADIENT_NORM)
+pruned_model = pruner.prune_unstructured(pruning_ratios)
+
+# 实现50%+稀疏度，精度损失最小
+stats = pruner.get_sparsity_stats()
+speedup = pruner.estimate_speedup()
+```
+
+### 2. **知识蒸馏**
+自动层选择，将大模型蒸馏到小模型。
+
+```python
+from uni_layer.compression import KnowledgeDistiller, DistillationConfig
+
+config = DistillationConfig(temperature=4.0, alpha=0.7, top_k_layers=3)
+distiller = KnowledgeDistiller(teacher, student, contributions, config)
+
+# 基于CKA/GradNorm自动选择重要层
+for inputs, labels in data_loader:
+    loss_components = distiller.train_step(inputs, labels, optimizer)
+```
+
+### 3. **参数高效微调 (PEFT)**
+使用LoRA/适配器，自适应秩选择，实现参数高效微调。
+
+```python
+from uni_layer.compression import PEFTOptimizer, AdapterConfig
+
+config = AdapterConfig(method="lora", rank=8, adaptive_rank=True)
+peft_optimizer = PEFTOptimizer(model, contributions, config)
+
+# 自动选择层并计算自适应秩
+model_with_lora = peft_optimizer.inject_lora(selected_layers, ranks)
+
+# 可训练参数减少10-100倍
+efficiency = peft_optimizer.get_parameter_efficiency()
+```
+
+**详见 [压缩指南](docs/COMPRESSION_CN.md) 获取详细文档。**
+
 ## 🔬 支持的模型类别
 
 | 类别 | 模型 | 状态 |
