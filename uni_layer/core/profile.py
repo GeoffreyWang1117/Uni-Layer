@@ -19,9 +19,10 @@ Usage:
     profile.to_dict()               # full JSON-serializable report
 """
 
-from typing import Dict, List, Tuple, Any, Optional
-import numpy as np
 from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Tuple
+
+import numpy as np
 
 
 class LayerProfile:
@@ -205,8 +206,8 @@ class LayerProfile:
                 continue
 
             early = float(np.mean(col[:third]))
-            mid = float(np.mean(col[third:2 * third]))
-            late = float(np.mean(col[2 * third:]))
+            mid = float(np.mean(col[third : 2 * third]))
+            late = float(np.mean(col[2 * third :]))
 
             # Determine trend
             if early > mid and late > mid and (early > mid * 1.2 or late > mid * 1.2):
@@ -255,12 +256,14 @@ class LayerProfile:
                     layer = self._layers[i]
                     if layer not in result:
                         result[layer] = []
-                    result[layer].append({
-                        "metric": key,
-                        "value": round(float(col[i]), 6),
-                        "z_score": round(float(z), 2),
-                        "note": "unusually high" if z > 0 else "unusually low",
-                    })
+                    result[layer].append(
+                        {
+                            "metric": key,
+                            "value": round(float(col[i]), 6),
+                            "z_score": round(float(z), 2),
+                            "note": "unusually high" if z > 0 else "unusually low",
+                        }
+                    )
 
         return result
 
@@ -417,11 +420,15 @@ class LayerProfile:
         # Rows
         layer_indices = list(range(self._n_layers))
         if top_k > 0 and self._n_layers > top_k * 2:
-            layer_indices = list(range(top_k)) + [-1] + list(range(self._n_layers - top_k, self._n_layers))
+            layer_indices = (
+                list(range(top_k)) + [-1] + list(range(self._n_layers - top_k, self._n_layers))
+            )
 
         for idx in layer_indices:
             if idx == -1:
-                lines.append(f"{'...':<{name_w}} {'':16} {'':>4}" + "".join(f" {'...':>14}" for _ in metrics))
+                lines.append(
+                    f"{'...':<{name_w}} {'':16} {'':>4}" + "".join(f" {'...':>14}" for _ in metrics)
+                )
                 continue
             layer = self._layers[idx]
             ltype = self.contributions[layer].get("layer_type", "?")[:15]
@@ -463,7 +470,11 @@ class LayerProfile:
 
         # Table
         sections.append(f"\n--- Layer Metrics ---\n")
-        table = self.print_table.__wrapped__(self) if hasattr(self.print_table, '__wrapped__') else self._format_table()
+        table = (
+            self.print_table.__wrapped__(self)
+            if hasattr(self.print_table, "__wrapped__")
+            else self._format_table()
+        )
 
         # Depth trends
         trends = self.depth_trends
@@ -498,7 +509,9 @@ class LayerProfile:
         # Suggestions
         sections.append("\n--- Suggestions ---")
         p = self.pruning_suggestion()
-        sections.append(f"  Pruning (30%): remove {p['num_layers_removed']} layers -> {p['estimated_speedup']} speedup")
+        sections.append(
+            f"  Pruning (30%): remove {p['num_layers_removed']} layers -> {p['estimated_speedup']} speedup"
+        )
         if p["safe_to_remove"]:
             sections.append(f"    Candidates: {', '.join(p['safe_to_remove'][:8])}")
 
@@ -512,13 +525,16 @@ class LayerProfile:
 
         report = "\n".join(sections)
         # Now print table in the middle
-        full = report.replace("\n--- Layer Metrics ---\n", "\n--- Layer Metrics ---\n" + self._format_table() + "\n")
+        full = report.replace(
+            "\n--- Layer Metrics ---\n", "\n--- Layer Metrics ---\n" + self._format_table() + "\n"
+        )
         print(full)
         return full
 
     def _format_table(self) -> str:
         """Internal: format table without printing."""
         from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+
         primary_set = set(METRIC_PRIMARY_KEYS.values())
         metrics = [k for k in self._metric_keys if k in primary_set]
         if not metrics:
@@ -549,6 +565,7 @@ class LayerProfile:
     def to_markdown(self) -> str:
         """Export layer metrics as a Markdown table."""
         from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+
         primary_set = set(METRIC_PRIMARY_KEYS.values())
         metrics = [k for k in self._metric_keys if k in primary_set]
         if not metrics:
@@ -624,7 +641,9 @@ class LayerProfile:
         # Anomalies
         anomalies = self.anomalies
         if anomalies:
-            parts.append(f"{len(anomalies)} layer{'s' if len(anomalies) > 1 else ''} with anomalous metrics")
+            parts.append(
+                f"{len(anomalies)} layer{'s' if len(anomalies) > 1 else ''} with anomalous metrics"
+            )
 
         return ". ".join(parts) + "."
 

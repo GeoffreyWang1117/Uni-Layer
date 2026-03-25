@@ -7,13 +7,14 @@ Optimized version:
 - Avoids redundant model.zero_grad() when possible
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
-from uni_layer.utils.model_adapter import extract_logits, compute_loss, model_forward
+from uni_layer.utils.model_adapter import compute_loss, extract_logits, model_forward
 
 
 class HessianTrace(LayerMetric):
@@ -36,18 +37,13 @@ class HessianTrace(LayerMetric):
         num_batches: Number of batches to average over
     """
 
-    def __init__(
-        self,
-        num_samples: int = 5,
-        num_batches: int = 5,
-        **kwargs
-    ):
+    def __init__(self, num_samples: int = 5, num_batches: int = 5, **kwargs):
         super().__init__(
             name="hessian_trace",
             category="optimization",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_samples = num_samples
         self.num_batches = num_batches
@@ -61,7 +57,7 @@ class HessianTrace(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         criterion: Optional[nn.Module] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute Hessian trace approximation for the layer.
@@ -98,8 +94,10 @@ class HessianTrace(LayerMetric):
 
             for s in range(self.num_samples):
                 # Rademacher random vectors (+-1) - lower variance than Gaussian
-                vs = [torch.randint(0, 2, p.shape, device=device, dtype=p.dtype) * 2 - 1
-                      for p in params]
+                vs = [
+                    torch.randint(0, 2, p.shape, device=device, dtype=p.dtype) * 2 - 1
+                    for p in params
+                ]
 
                 # Forward pass (must redo per sample because create_graph
                 # retains the graph and we release it with retain_graph=False)
@@ -114,32 +112,28 @@ class HessianTrace(LayerMetric):
 
                 # First derivative with graph retained for second derivative
                 grads = torch.autograd.grad(
-                    loss, params,
+                    loss,
+                    params,
                     create_graph=True,
                     allow_unused=True,
                 )
 
                 # g^T v  (scalar)
-                gv = sum(
-                    (g * v).sum()
-                    for g, v in zip(grads, vs)
-                    if g is not None
-                )
+                gv = sum((g * v).sum() for g, v in zip(grads, vs) if g is not None)
 
                 if gv is not None and gv.requires_grad:
                     # Hv = d(g^T v)/d(params) — second derivative
                     # retain_graph=False releases the computation graph immediately
                     hvs = torch.autograd.grad(
-                        gv, params,
+                        gv,
+                        params,
                         retain_graph=False,
                         allow_unused=True,
                     )
 
                     # v^T H v
                     trace_sample = sum(
-                        (hv * v).sum().item()
-                        for hv, v in zip(hvs, vs)
-                        if hv is not None
+                        (hv * v).sum().item() for hv, v in zip(hvs, vs) if hv is not None
                     )
                     trace_estimate += trace_sample
 

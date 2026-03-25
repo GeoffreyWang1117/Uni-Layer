@@ -8,22 +8,18 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from uni_layer.metrics import (
-    GradientNorm,
     CKA,
-    EffectiveRank,
     ActivationEntropy,
     DropLayerRobustness,
+    EffectiveRank,
+    GradientNorm,
 )
 
 
 @pytest.fixture
 def simple_model():
     """Create a simple model for testing"""
-    model = nn.Sequential(
-        nn.Linear(10, 20),
-        nn.ReLU(),
-        nn.Linear(20, 5)
-    )
+    model = nn.Sequential(nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 5))
     return model
 
 
@@ -57,7 +53,7 @@ class TestGradientNorm:
             layer_idx=0,
             data_loader=sample_data,
             device="cpu",
-            criterion=nn.CrossEntropyLoss()
+            criterion=nn.CrossEntropyLoss(),
         )
 
         assert "gradient_norm" in result
@@ -75,7 +71,7 @@ class TestGradientNorm:
                 layer_name="0",
                 layer_idx=0,
                 data_loader=sample_data,
-                device="cpu"
+                device="cpu",
             )
 
             assert result["gradient_norm"] >= 0
@@ -100,7 +96,7 @@ class TestCKA:
             layer_name="0",
             layer_idx=0,
             data_loader=sample_data,
-            device="cpu"
+            device="cpu",
         )
 
         assert "cka_score" in result
@@ -125,7 +121,7 @@ class TestEffectiveRank:
             layer_name="0",
             layer_idx=0,
             data_loader=sample_data,
-            device="cpu"
+            device="cpu",
         )
 
         assert "effective_rank" in result
@@ -147,7 +143,7 @@ class TestActivationEntropy:
             layer_name="0",
             layer_idx=0,
             data_loader=sample_data,
-            device="cpu"
+            device="cpu",
         )
 
         assert "activation_entropy" in result
@@ -170,7 +166,7 @@ class TestDropLayerRobustness:
             layer_idx=0,
             data_loader=sample_data,
             device="cpu",
-            criterion=nn.CrossEntropyLoss()
+            criterion=nn.CrossEntropyLoss(),
         )
 
         assert "droplayer_loss_increase" in result

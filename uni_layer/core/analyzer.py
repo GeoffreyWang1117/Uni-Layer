@@ -2,15 +2,16 @@
 Main LayerAnalyzer class for computing and analyzing layer contributions.
 """
 
+from collections import OrderedDict
+from typing import Any, Dict, List, Optional, Union
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, List, Optional, Union, Any
-from collections import OrderedDict
-import numpy as np
 from tqdm import tqdm
 
 from uni_layer.core.base_metric import LayerMetric
-from uni_layer.core.cache import ActivationCache, GradientCache, BatchCache
+from uni_layer.core.cache import ActivationCache, BatchCache, GradientCache
 from uni_layer.utils.layer_utils import get_model_layers, identify_layer_type
 
 
@@ -80,20 +81,35 @@ class LayerAnalyzer:
     # Preset metric configurations
     PRESETS = {
         "llm_fast": [
-            "BlockInfluence", "EffectiveRank", "CKA",
-            "ActivationEntropy", "AttentionFlow",
+            "BlockInfluence",
+            "EffectiveRank",
+            "CKA",
+            "ActivationEntropy",
+            "AttentionFlow",
         ],
         "llm_full": [
-            "BlockInfluence", "EffectiveRank", "CKA",
-            "ActivationEntropy", "AttentionFlow",
-            "GradientNorm", "FisherInformation",
+            "BlockInfluence",
+            "EffectiveRank",
+            "CKA",
+            "ActivationEntropy",
+            "AttentionFlow",
+            "GradientNorm",
+            "FisherInformation",
         ],
         "full": [
-            "GradientNorm", "HessianTrace", "FisherInformation",
-            "CKA", "EffectiveRank", "NTKTrace",
-            "ActivationEntropy", "MutualInformation",
-            "JacobianRank", "BlockInfluence",
-            "DropLayerRobustness", "LaplacePosterior", "AttentionFlow",
+            "GradientNorm",
+            "HessianTrace",
+            "FisherInformation",
+            "CKA",
+            "EffectiveRank",
+            "NTKTrace",
+            "ActivationEntropy",
+            "MutualInformation",
+            "JacobianRank",
+            "BlockInfluence",
+            "DropLayerRobustness",
+            "LaplacePosterior",
+            "AttentionFlow",
         ],
         "quick": ["GradientNorm", "BlockInfluence", "EffectiveRank"],
     }
@@ -107,7 +123,7 @@ class LayerAnalyzer:
         use_cache: bool = True,
         num_batches: int = 10,
         preset: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, Dict[str, float]]:
         """
         Compute multiple layer contribution metrics.
@@ -167,7 +183,7 @@ class LayerAnalyzer:
         results: OrderedDict,
         verbose: bool,
         num_batches: int,
-        **kwargs
+        **kwargs,
     ) -> OrderedDict:
         """Compute metrics using shared activation/gradient caches."""
 
@@ -207,7 +223,7 @@ class LayerAnalyzer:
                             device=self.device,
                             criterion=self.criterion,
                             _cached_activations=act_cache.get(layer_name),
-                            **kwargs
+                            **kwargs,
                         )
                         results[layer_name].update(metric_values)
                     except Exception as e:
@@ -226,7 +242,9 @@ class LayerAnalyzer:
                 # Set model to train mode for gradient computation
                 self.model.train()
 
-                for layer_name in tqdm(layer_names, desc=f"  {metric.name}", disable=not verbose, leave=False):
+                for layer_name in tqdm(
+                    layer_names, desc=f"  {metric.name}", disable=not verbose, leave=False
+                ):
                     layer = self.layers.get(layer_name)
                     if layer is None:
                         continue
@@ -241,7 +259,7 @@ class LayerAnalyzer:
                             data_loader=batch_cache,
                             device=self.device,
                             criterion=self.criterion,
-                            **kwargs
+                            **kwargs,
                         )
                         results[layer_name].update(metric_values)
                     except Exception as e:
@@ -258,7 +276,7 @@ class LayerAnalyzer:
         layer_names: List[str],
         results: OrderedDict,
         verbose: bool,
-        **kwargs
+        **kwargs,
     ) -> OrderedDict:
         """Original compute path (no caching)."""
         for metric in tqdm(metrics, desc="Computing metrics", disable=not verbose):
@@ -272,7 +290,9 @@ class LayerAnalyzer:
             else:
                 self.model.eval()
 
-            for layer_name in tqdm(layer_names, desc=f"  {metric.name}", disable=not verbose, leave=False):
+            for layer_name in tqdm(
+                layer_names, desc=f"  {metric.name}", disable=not verbose, leave=False
+            ):
                 layer = self.layers[layer_name]
                 layer_idx = list(self.layers.keys()).index(layer_name)
 
@@ -285,7 +305,7 @@ class LayerAnalyzer:
                         data_loader=data_loader,
                         device=self.device,
                         criterion=self.criterion,
-                        **kwargs
+                        **kwargs,
                     )
                     results[layer_name].update(metric_values)
                 except Exception as e:
@@ -296,10 +316,7 @@ class LayerAnalyzer:
         return results
 
     def rank_layers(
-        self,
-        contributions: Dict[str, Dict[str, float]],
-        metric_name: str,
-        ascending: bool = False
+        self, contributions: Dict[str, Dict[str, float]], metric_name: str, ascending: bool = False
     ) -> List[tuple]:
         """
         Rank layers by a specific metric.
@@ -325,7 +342,7 @@ class LayerAnalyzer:
         contributions: Dict[str, Dict[str, float]],
         metric_name: str,
         k: int = 5,
-        ascending: bool = False
+        ascending: bool = False,
     ) -> List[str]:
         """
         Get top-k most important layers based on a metric.
@@ -346,7 +363,7 @@ class LayerAnalyzer:
         self,
         contributions: Dict[str, Dict[str, float]],
         metric_name: str = "gradient_norm",
-        prune_ratio: float = 0.3
+        prune_ratio: float = 0.3,
     ) -> Dict[str, float]:
         """
         Recommend layer-wise pruning ratios based on contributions.
@@ -379,7 +396,7 @@ class LayerAnalyzer:
         self,
         contributions: Dict[str, Dict[str, float]],
         metric_name: str = "gradient_norm",
-        top_k: int = 6
+        top_k: int = 6,
     ) -> List[str]:
         """
         Recommend layers for knowledge distillation based on contributions.
@@ -401,7 +418,7 @@ class LayerAnalyzer:
         self,
         contributions: Dict[str, Dict[str, float]],
         metric_name: str = "gradient_norm",
-        num_adapters: int = 4
+        num_adapters: int = 4,
     ) -> List[str]:
         """
         Recommend insertion points for parameter-efficient fine-tuning adapters.
@@ -420,10 +437,7 @@ class LayerAnalyzer:
         return self.get_top_k_layers(contributions, metric_name, k=num_adapters)
 
     def aggregate_by_depth(
-        self,
-        contributions: Dict[str, Dict[str, float]],
-        metric_name: str,
-        num_bins: int = 5
+        self, contributions: Dict[str, Dict[str, float]], metric_name: str, num_bins: int = 5
     ) -> Dict[str, float]:
         """
         Aggregate layer contributions by depth (early, middle, late layers).
@@ -456,9 +470,7 @@ class LayerAnalyzer:
         return bins
 
     def get_summary_statistics(
-        self,
-        contributions: Dict[str, Dict[str, float]],
-        metric_name: str
+        self, contributions: Dict[str, Dict[str, float]], metric_name: str
     ) -> Dict[str, float]:
         """
         Get summary statistics for a metric across all layers.
@@ -491,9 +503,7 @@ class LayerAnalyzer:
     def _resolve_preset(self, preset: str, num_batches: int) -> List[LayerMetric]:
         """Resolve a preset name to a list of metric instances."""
         if preset not in self.PRESETS:
-            raise ValueError(
-                f"Unknown preset '{preset}'. Available: {list(self.PRESETS.keys())}"
-            )
+            raise ValueError(f"Unknown preset '{preset}'. Available: {list(self.PRESETS.keys())}")
 
         import uni_layer.metrics as m
 

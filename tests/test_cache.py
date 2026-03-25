@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
-from uni_layer.core.cache import ActivationCache, GradientCache, BatchCache
+from uni_layer.core.cache import ActivationCache, BatchCache, GradientCache
 
 
 @pytest.fixture

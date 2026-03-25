@@ -10,12 +10,13 @@ This module provides:
 - CachedDataLoader: Wraps a DataLoader to avoid re-iterating over data
 """
 
-from typing import Dict, List, Any, Optional
 from collections import OrderedDict
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 
-from uni_layer.utils.model_adapter import model_forward, compute_loss
+from uni_layer.utils.model_adapter import compute_loss, model_forward
 
 
 class ActivationCache:
@@ -37,9 +38,7 @@ class ActivationCache:
     def __init__(self, model: nn.Module, layers: Dict[str, nn.Module]):
         self.model = model
         self.layers = layers
-        self._activations: Dict[str, List[torch.Tensor]] = {
-            name: [] for name in layers
-        }
+        self._activations: Dict[str, List[torch.Tensor]] = {name: [] for name in layers}
         self._handles = []
 
     def capture(
@@ -89,12 +88,15 @@ class ActivationCache:
 
     def _register_hooks(self):
         for name, layer in self.layers.items():
+
             def make_hook(n):
                 def hook_fn(module, input, output):
                     if isinstance(output, (tuple, list)):
                         output = output[0]
                     self._activations[n].append(output.detach().cpu())
+
                 return hook_fn
+
             handle = layer.register_forward_hook(make_hook(name))
             self._handles.append(handle)
 
@@ -115,9 +117,7 @@ class GradientCache:
     def __init__(self, model: nn.Module, layers: Dict[str, nn.Module]):
         self.model = model
         self.layers = layers
-        self._gradients: Dict[str, List[torch.Tensor]] = {
-            name: [] for name in layers
-        }
+        self._gradients: Dict[str, List[torch.Tensor]] = {name: [] for name in layers}
         self._handles = []
 
     def capture(
@@ -166,11 +166,14 @@ class GradientCache:
 
     def _register_hooks(self):
         for name, layer in self.layers.items():
+
             def make_hook(n):
                 def hook_fn(module, grad_input, grad_output):
                     if grad_output[0] is not None:
                         self._gradients[n].append(grad_output[0].detach().cpu())
+
                 return hook_fn
+
             handle = layer.register_full_backward_hook(make_hook(name))
             self._handles.append(handle)
 

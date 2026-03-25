@@ -11,30 +11,41 @@ Tests cover:
 """
 
 import time
+from dataclasses import dataclass
+from typing import Optional
+
 import pytest
 import torch
 import torch.nn as nn
-from dataclasses import dataclass
-from typing import Optional
 from torch.utils.data import DataLoader, TensorDataset
 
 from uni_layer import LayerAnalyzer
-from uni_layer.metrics import (
-    GradientNorm, HessianTrace, FisherInformation,
-    CKA, EffectiveRank, NTKTrace,
-    MutualInformation, ActivationEntropy,
-    JacobianRank, BlockInfluence,
-    DropLayerRobustness, LaplacePosterior, AttentionFlow,
-)
 from uni_layer.core.schema import (
-    validate_metric_result, validate_contributions,
-    METRIC_PRIMARY_KEYS, METRIC_OUTPUT_KEYS,
+    METRIC_OUTPUT_KEYS,
+    METRIC_PRIMARY_KEYS,
+    validate_contributions,
+    validate_metric_result,
 )
-
+from uni_layer.metrics import (
+    CKA,
+    ActivationEntropy,
+    AttentionFlow,
+    BlockInfluence,
+    DropLayerRobustness,
+    EffectiveRank,
+    FisherInformation,
+    GradientNorm,
+    HessianTrace,
+    JacobianRank,
+    LaplacePosterior,
+    MutualInformation,
+    NTKTrace,
+)
 
 # ============================================================
 # Model fixtures for multi-architecture testing
 # ============================================================
+
 
 @pytest.fixture
 def cnn_model():
@@ -48,15 +59,18 @@ def cnn_model():
         nn.Linear(16, 10),
     )
 
+
 @pytest.fixture
 def cnn_data():
     X = torch.randn(64, 3, 8, 8)
     y = torch.randint(0, 10, (64,))
     return DataLoader(TensorDataset(X, y), batch_size=16)
 
+
 @pytest.fixture
 def transformer_model():
     """Transformer with MultiheadAttention."""
+
     class MiniTransformer(nn.Module):
         def __init__(self):
             super().__init__()
@@ -73,15 +87,18 @@ def transformer_model():
 
     return MiniTransformer()
 
+
 @pytest.fixture
 def transformer_data():
     X = torch.randn(64, 10)
     y = torch.randint(0, 5, (64,))
     return DataLoader(TensorDataset(X, y), batch_size=16)
 
+
 @pytest.fixture
 def residual_model():
     """Model with skip connections."""
+
     class ResBlock(nn.Module):
         def __init__(self, dim):
             super().__init__()
@@ -107,14 +124,17 @@ def residual_model():
 
     return ResModel()
 
+
 @dataclass
 class HFOutput:
     logits: Optional[torch.Tensor] = None
     loss: Optional[torch.Tensor] = None
 
+
 @pytest.fixture
 def hf_model():
     """HuggingFace-style model returning dataclass."""
+
     class HFModel(nn.Module):
         def __init__(self):
             super().__init__()
@@ -134,15 +154,18 @@ def hf_model():
 
     return HFModel()
 
+
 @pytest.fixture
 def hf_data():
     X = torch.randint(1, 100, (64, 8))
     y = torch.randint(0, 5, (64,))
     return DataLoader(TensorDataset(X, y), batch_size=16)
 
+
 @pytest.fixture
 def simple_model():
     return nn.Sequential(nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 5))
+
 
 @pytest.fixture
 def simple_data():
@@ -154,6 +177,7 @@ def simple_data():
 # ============================================================
 # Performance & Throughput Tests
 # ============================================================
+
 
 class TestPerformance:
     """Benchmark wall-clock time for each metric."""
@@ -178,9 +202,12 @@ class TestPerformance:
         metric = metric_fn()
         start = time.perf_counter()
         result = metric.compute(
-            model=simple_model, layer=simple_model[0],
-            layer_name="0", layer_idx=0,
-            data_loader=simple_data, device="cpu",
+            model=simple_model,
+            layer=simple_model[0],
+            layer_name="0",
+            layer_idx=0,
+            data_loader=simple_data,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         elapsed = time.perf_counter() - start
@@ -190,17 +217,25 @@ class TestPerformance:
 
     def test_cache_faster_than_no_cache(self, simple_model, simple_data):
         """Cached mode should not be slower than uncached for multiple metrics."""
-        metrics = [CKA(num_batches=2), EffectiveRank(num_batches=2), ActivationEntropy(num_batches=2)]
+        metrics = [
+            CKA(num_batches=2),
+            EffectiveRank(num_batches=2),
+            ActivationEntropy(num_batches=2),
+        ]
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
 
         # Cached
         start = time.perf_counter()
-        r1 = analyzer.compute_metrics(metrics=metrics, data_loader=simple_data, verbose=False, use_cache=True, num_batches=2)
+        r1 = analyzer.compute_metrics(
+            metrics=metrics, data_loader=simple_data, verbose=False, use_cache=True, num_batches=2
+        )
         t_cached = time.perf_counter() - start
 
         # Uncached
         start = time.perf_counter()
-        r2 = analyzer.compute_metrics(metrics=metrics, data_loader=simple_data, verbose=False, use_cache=False)
+        r2 = analyzer.compute_metrics(
+            metrics=metrics, data_loader=simple_data, verbose=False, use_cache=False
+        )
         t_uncached = time.perf_counter() - start
 
         # Both should produce results
@@ -215,7 +250,9 @@ class TestPerformance:
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
 
         start = time.perf_counter()
-        results = analyzer.compute_metrics(metrics=metrics, data_loader=simple_data, verbose=False, num_batches=2)
+        results = analyzer.compute_metrics(
+            metrics=metrics, data_loader=simple_data, verbose=False, num_batches=2
+        )
         elapsed = time.perf_counter() - start
 
         num_layers = len(results)
@@ -228,6 +265,7 @@ class TestPerformance:
 # ============================================================
 # Compatibility Tests
 # ============================================================
+
 
 class TestCompatibility:
     """Test all metrics work across different model architectures."""
@@ -246,58 +284,62 @@ class TestCompatibility:
 
     def _run_metric(self, metric, model, layer, data_loader):
         result = metric.compute(
-            model=model, layer=layer,
-            layer_name="test", layer_idx=0,
-            data_loader=data_loader, device="cpu",
+            model=model,
+            layer=layer,
+            layer_name="test",
+            layer_idx=0,
+            data_loader=data_loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert isinstance(result, dict), f"Expected dict, got {type(result)}"
         for k, v in result.items():
-            assert v is None or isinstance(v, (int, float)), \
-                f"Key '{k}' has type {type(v)}, expected float|None"
+            assert v is None or isinstance(
+                v, (int, float)
+            ), f"Key '{k}' has type {type(v)}, expected float|None"
         return result
 
     # --- CNN ---
-    @pytest.mark.parametrize("metric_fn", ACTIVATION_METRICS,
-                             ids=["CKA", "EffRank", "Entropy", "BI"])
+    @pytest.mark.parametrize(
+        "metric_fn", ACTIVATION_METRICS, ids=["CKA", "EffRank", "Entropy", "BI"]
+    )
     def test_cnn_activation_metrics(self, metric_fn, cnn_model, cnn_data):
         self._run_metric(metric_fn(), cnn_model, cnn_model[0], cnn_data)
 
-    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS,
-                             ids=["GradNorm", "Fisher"])
+    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS, ids=["GradNorm", "Fisher"])
     def test_cnn_gradient_metrics(self, metric_fn, cnn_model, cnn_data):
         self._run_metric(metric_fn(), cnn_model, cnn_model[0], cnn_data)
 
     # --- Transformer ---
-    @pytest.mark.parametrize("metric_fn", ACTIVATION_METRICS,
-                             ids=["CKA", "EffRank", "Entropy", "BI"])
+    @pytest.mark.parametrize(
+        "metric_fn", ACTIVATION_METRICS, ids=["CKA", "EffRank", "Entropy", "BI"]
+    )
     def test_transformer_activation_metrics(self, metric_fn, transformer_model, transformer_data):
         self._run_metric(metric_fn(), transformer_model, transformer_model.embed, transformer_data)
 
-    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS,
-                             ids=["GradNorm", "Fisher"])
+    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS, ids=["GradNorm", "Fisher"])
     def test_transformer_gradient_metrics(self, metric_fn, transformer_model, transformer_data):
         self._run_metric(metric_fn(), transformer_model, transformer_model.embed, transformer_data)
 
     # --- HuggingFace-style ---
-    @pytest.mark.parametrize("metric_fn", ACTIVATION_METRICS,
-                             ids=["CKA", "EffRank", "Entropy", "BI"])
+    @pytest.mark.parametrize(
+        "metric_fn", ACTIVATION_METRICS, ids=["CKA", "EffRank", "Entropy", "BI"]
+    )
     def test_hf_activation_metrics(self, metric_fn, hf_model, hf_data):
         self._run_metric(metric_fn(), hf_model, hf_model.layers[0], hf_data)
 
-    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS,
-                             ids=["GradNorm", "Fisher"])
+    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS, ids=["GradNorm", "Fisher"])
     def test_hf_gradient_metrics(self, metric_fn, hf_model, hf_data):
         self._run_metric(metric_fn(), hf_model, hf_model.layers[0], hf_data)
 
     # --- Residual ---
-    @pytest.mark.parametrize("metric_fn", ACTIVATION_METRICS,
-                             ids=["CKA", "EffRank", "Entropy", "BI"])
+    @pytest.mark.parametrize(
+        "metric_fn", ACTIVATION_METRICS, ids=["CKA", "EffRank", "Entropy", "BI"]
+    )
     def test_residual_activation_metrics(self, metric_fn, residual_model, transformer_data):
         self._run_metric(metric_fn(), residual_model, residual_model.res1, transformer_data)
 
-    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS,
-                             ids=["GradNorm", "Fisher"])
+    @pytest.mark.parametrize("metric_fn", GRADIENT_METRICS, ids=["GradNorm", "Fisher"])
     def test_residual_gradient_metrics(self, metric_fn, residual_model, transformer_data):
         self._run_metric(metric_fn(), residual_model, residual_model.res1, transformer_data)
 
@@ -306,7 +348,9 @@ class TestCompatibility:
         analyzer = LayerAnalyzer(cnn_model, task_type="classification")
         results = analyzer.compute_metrics(
             metrics=[GradientNorm(num_batches=2), CKA(num_batches=2)],
-            data_loader=cnn_data, verbose=False, num_batches=2,
+            data_loader=cnn_data,
+            verbose=False,
+            num_batches=2,
         )
         validate_contributions(results)
 
@@ -314,7 +358,9 @@ class TestCompatibility:
         analyzer = LayerAnalyzer(hf_model, task_type="classification")
         results = analyzer.compute_metrics(
             metrics=[GradientNorm(num_batches=2), BlockInfluence(num_batches=2)],
-            data_loader=hf_data, verbose=False, num_batches=2,
+            data_loader=hf_data,
+            verbose=False,
+            num_batches=2,
         )
         validate_contributions(results)
 
@@ -322,7 +368,9 @@ class TestCompatibility:
         analyzer = LayerAnalyzer(transformer_model, task_type="classification")
         results = analyzer.compute_metrics(
             metrics=[EffectiveRank(num_batches=2), ActivationEntropy(num_batches=2)],
-            data_loader=transformer_data, verbose=False, num_batches=2,
+            data_loader=transformer_data,
+            verbose=False,
+            num_batches=2,
         )
         validate_contributions(results)
 
@@ -330,6 +378,7 @@ class TestCompatibility:
 # ============================================================
 # Output Format Validation Tests
 # ============================================================
+
 
 class TestOutputFormat:
     """Verify every metric conforms to its documented schema."""
@@ -348,16 +397,18 @@ class TestOutputFormat:
         ("laplace_posterior", lambda: LaplacePosterior(num_batches=2, mode="fisher")),
     ]
 
-    @pytest.mark.parametrize("metric_name,metric_fn", ALL_METRICS,
-                             ids=[m[0] for m in ALL_METRICS])
+    @pytest.mark.parametrize("metric_name,metric_fn", ALL_METRICS, ids=[m[0] for m in ALL_METRICS])
     def test_output_keys_match_schema(self, metric_name, metric_fn, simple_model, simple_data):
         """Each metric's output must contain its documented primary key."""
         metric = metric_fn()
         DropLayerRobustness.clear_baseline_cache()
         result = metric.compute(
-            model=simple_model, layer=simple_model[0],
-            layer_name="0", layer_idx=0,
-            data_loader=simple_data, device="cpu",
+            model=simple_model,
+            layer=simple_model[0],
+            layer_name="0",
+            layer_idx=0,
+            data_loader=simple_data,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         validate_metric_result(metric_name, result)
@@ -367,7 +418,9 @@ class TestOutputFormat:
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         results = analyzer.compute_metrics(
             metrics=[GradientNorm(num_batches=1)],
-            data_loader=simple_data, verbose=False, num_batches=1,
+            data_loader=simple_data,
+            verbose=False,
+            num_batches=1,
         )
         for layer_name, data in results.items():
             assert "layer_idx" in data, f"Missing layer_idx for {layer_name}"
@@ -380,7 +433,9 @@ class TestOutputFormat:
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         results = analyzer.compute_metrics(
             metrics=[GradientNorm(num_batches=1)],
-            data_loader=simple_data, verbose=False, num_batches=1,
+            data_loader=simple_data,
+            verbose=False,
+            num_batches=1,
         )
         ranked = analyzer.rank_layers(results, "gradient_norm")
         assert isinstance(ranked, list)

@@ -42,8 +42,9 @@ Requires: pip install peft
 """
 
 from typing import Dict, List, Optional
-import torch.nn as nn
+
 import numpy as np
+import torch.nn as nn
 
 
 class HuggingFacePEFTBridge:
@@ -190,9 +191,7 @@ class HuggingFacePEFTBridge:
         Returns:
             Dict with keys: target_modules, r, lora_alpha, task_type
         """
-        target_modules = self.recommend_target_modules(
-            metric_name=metric_name, top_k=top_k
-        )
+        target_modules = self.recommend_target_modules(metric_name=metric_name, top_k=top_k)
 
         return {
             "target_modules": target_modules,
@@ -243,9 +242,19 @@ class HuggingFacePEFTBridge:
         for name, module in self.model.named_modules():
             if isinstance(module, nn.Linear):
                 short = name.split(".")[-1]
-                if short in ("q_proj", "k_proj", "v_proj", "o_proj",
-                             "query", "key", "value", "dense",
-                             "fc1", "fc2", "out_proj"):
+                if short in (
+                    "q_proj",
+                    "k_proj",
+                    "v_proj",
+                    "o_proj",
+                    "query",
+                    "key",
+                    "value",
+                    "dense",
+                    "fc1",
+                    "fc2",
+                    "out_proj",
+                ):
                     if short not in patterns:
                         patterns.append(short)
         return patterns if patterns else ["q_proj", "v_proj"]

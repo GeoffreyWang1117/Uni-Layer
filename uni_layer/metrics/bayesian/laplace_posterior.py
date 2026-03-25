@@ -15,13 +15,14 @@ Mathematical basis:
     gives an estimate of the inverse trace.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
-from uni_layer.utils.model_adapter import extract_logits, compute_loss, model_forward
+from uni_layer.utils.model_adapter import compute_loss, extract_logits, model_forward
 
 
 class LaplacePosterior(LayerMetric):
@@ -58,14 +59,14 @@ class LaplacePosterior(LayerMetric):
         num_batches: int = 5,
         damping: float = 1e-3,
         mode: str = "fisher",
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             name="laplace_posterior",
             category="bayesian",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_samples = num_samples
         self.num_batches = num_batches
@@ -81,7 +82,7 @@ class LaplacePosterior(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         criterion: Optional[nn.Module] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         if criterion is None:
             criterion = nn.CrossEntropyLoss()
@@ -93,7 +94,9 @@ class LaplacePosterior(LayerMetric):
         if self.mode == "fisher":
             return self._compute_fisher_mode(model, layer, params, data_loader, device, criterion)
         else:
-            return self._compute_hutchinson_mode(model, layer, params, data_loader, device, criterion)
+            return self._compute_hutchinson_mode(
+                model, layer, params, data_loader, device, criterion
+            )
 
     def _compute_fisher_mode(
         self, model, layer, params, data_loader, device, criterion
@@ -132,7 +135,7 @@ class LaplacePosterior(LayerMetric):
 
             for i, p in enumerate(params):
                 if p.grad is not None:
-                    fisher_diag[i] += p.grad.data ** 2
+                    fisher_diag[i] += p.grad.data**2
 
             num_samples += 1
 
@@ -180,8 +183,10 @@ class LaplacePosterior(LayerMetric):
 
             for _ in range(self.num_samples):
                 # Rademacher random vectors
-                vs = [torch.randint(0, 2, p.shape, device=device, dtype=p.dtype) * 2 - 1
-                      for p in params]
+                vs = [
+                    torch.randint(0, 2, p.shape, device=device, dtype=p.dtype) * 2 - 1
+                    for p in params
+                ]
 
                 model.zero_grad()
                 outputs = model_forward(model, inputs, targets)
@@ -194,31 +199,27 @@ class LaplacePosterior(LayerMetric):
 
                 # First derivative
                 grads = torch.autograd.grad(
-                    loss, params,
+                    loss,
+                    params,
                     create_graph=True,
                     allow_unused=True,
                 )
 
                 # g^T v
-                gv = sum(
-                    (g * v).sum()
-                    for g, v in zip(grads, vs)
-                    if g is not None
-                )
+                gv = sum((g * v).sum() for g, v in zip(grads, vs) if g is not None)
 
                 if gv is not None and gv.requires_grad:
                     # Hv
                     hvs = torch.autograd.grad(
-                        gv, params,
+                        gv,
+                        params,
                         retain_graph=False,
                         allow_unused=True,
                     )
 
                     # v^T H v (curvature in random direction)
                     hv_dot_v = sum(
-                        (hv * v).sum().item()
-                        for hv, v in zip(hvs, vs)
-                        if hv is not None
+                        (hv * v).sum().item() for hv, v in zip(hvs, vs) if hv is not None
                     )
 
                     # Inverse curvature as variance proxy

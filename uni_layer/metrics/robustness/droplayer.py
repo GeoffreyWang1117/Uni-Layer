@@ -6,10 +6,11 @@ Optimized version:
 - Accepts pre-computed baseline via kwargs to avoid redundant forward passes
 """
 
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional, List
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import extract_logits, model_forward
@@ -38,18 +39,14 @@ class DropLayerRobustness(LayerMetric):
     _baseline_cache: Dict[int, Dict] = {}
 
     def __init__(
-        self,
-        num_batches: int = 10,
-        metric: str = "loss",
-        drop_type: str = "zero",
-        **kwargs
+        self, num_batches: int = 10, metric: str = "loss", drop_type: str = "zero", **kwargs
     ):
         super().__init__(
             name="droplayer_robustness",
             category="robustness",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.metric = metric
@@ -115,7 +112,7 @@ class DropLayerRobustness(LayerMetric):
         device: str = "cuda",
         criterion: Optional[nn.Module] = None,
         _baseline_results: Optional[Dict] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute DropLayer robustness metric.
@@ -185,7 +182,7 @@ class DropLayerRobustness(LayerMetric):
                             dropped_accs.append(acc)
 
                     except Exception:
-                        dropped_losses.append(float('inf'))
+                        dropped_losses.append(float("inf"))
                         if self.metric == "accuracy":
                             dropped_accs.append(0.0)
 
@@ -200,7 +197,9 @@ class DropLayerRobustness(LayerMetric):
 
             result = {
                 "droplayer_loss_increase": float(loss_increase),
-                "droplayer_loss_ratio": float(dropped_loss / baseline_loss) if baseline_loss > 0 else 1.0,
+                "droplayer_loss_ratio": (
+                    float(dropped_loss / baseline_loss) if baseline_loss > 0 else 1.0
+                ),
             }
 
             if self.metric == "accuracy" and baseline_accs and dropped_accs:
@@ -208,10 +207,14 @@ class DropLayerRobustness(LayerMetric):
                 dropped_acc = np.mean(dropped_accs)
                 acc_decrease = baseline_acc - dropped_acc
 
-                result.update({
-                    "droplayer_acc_decrease": float(acc_decrease),
-                    "droplayer_acc_ratio": float(dropped_acc / baseline_acc) if baseline_acc > 0 else 0.0,
-                })
+                result.update(
+                    {
+                        "droplayer_acc_decrease": float(acc_decrease),
+                        "droplayer_acc_ratio": (
+                            float(dropped_acc / baseline_acc) if baseline_acc > 0 else 0.0
+                        ),
+                    }
+                )
 
             return result
         else:

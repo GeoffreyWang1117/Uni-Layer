@@ -35,9 +35,10 @@ Usage:
 Requires: pip install torch-pruning
 """
 
-from typing import Dict, List, Optional, Any
-import torch.nn as nn
+from typing import Any, Dict, List, Optional
+
 import numpy as np
+import torch.nn as nn
 
 
 class TorchPruningBridge:
@@ -63,9 +64,7 @@ class TorchPruningBridge:
         """
         self.model = model
         self.contributions = contributions
-        self._module_name_map = {
-            name: module for name, module in model.named_modules()
-        }
+        self._module_name_map = {name: module for name, module in model.named_modules()}
 
     def as_importance_scores(
         self,
@@ -100,10 +99,7 @@ class TorchPruningBridge:
             min_val = min(scores.values())
             max_val = max(scores.values())
             if max_val - min_val > 1e-8:
-                scores = {
-                    k: (v - min_val) / (max_val - min_val)
-                    for k, v in scores.items()
-                }
+                scores = {k: (v - min_val) / (max_val - min_val) for k, v in scores.items()}
 
         return scores
 
@@ -156,10 +152,7 @@ class TorchPruningBridge:
             current_mean = np.mean(list(ratios.values()))
             if current_mean > 1e-8:
                 scale = target_sparsity / current_mean
-                ratios = {
-                    m: max(min_ratio, min(r * scale, max_ratio))
-                    for m, r in ratios.items()
-                }
+                ratios = {m: max(min_ratio, min(r * scale, max_ratio)) for m, r in ratios.items()}
 
         return ratios
 
@@ -206,7 +199,8 @@ class TorchPruningBridge:
         all_metrics = set()
         for metrics in self.contributions.values():
             all_metrics.update(
-                k for k, v in metrics.items()
+                k
+                for k, v in metrics.items()
                 if k not in ("layer_idx", "layer_type") and v is not None
             )
         return sorted(all_metrics)

@@ -2,10 +2,11 @@
 Activation Entropy metric for measuring layer information content.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 
@@ -22,18 +23,13 @@ class ActivationEntropy(LayerMetric):
         num_bins: Number of bins for discretization
     """
 
-    def __init__(
-        self,
-        num_batches: int = 10,
-        num_bins: int = 50,
-        **kwargs
-    ):
+    def __init__(self, num_batches: int = 10, num_bins: int = 50, **kwargs):
         super().__init__(
             name="activation_entropy",
             category="information_theory",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.num_bins = num_bins
@@ -70,7 +66,7 @@ class ActivationEntropy(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute activation entropy for the layer.
@@ -79,10 +75,7 @@ class ActivationEntropy(LayerMetric):
             Dictionary with entropy metrics
         """
         activations = self._get_layer_activations(
-            model=model,
-            layer=layer,
-            data_loader=data_loader,
-            num_batches=self.num_batches
+            model=model, layer=layer, data_loader=data_loader, num_batches=self.num_batches
         )
 
         if activations:

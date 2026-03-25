@@ -5,13 +5,14 @@ Uses randomized SVD for large activation matrices, providing
 O(N*D*k) compute instead of O(N*D*min(N,D)) for full SVD.
 """
 
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional, List
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
-from uni_layer.utils.fast_math import randomized_svd, effective_rank_from_svd
+from uni_layer.utils.fast_math import effective_rank_from_svd, randomized_svd
 
 
 class EffectiveRank(LayerMetric):
@@ -44,14 +45,14 @@ class EffectiveRank(LayerMetric):
         epsilon: float = 1e-10,
         n_components: int = 50,
         use_randomized_svd: bool = True,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             name="effective_rank",
             category="spectral",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.epsilon = epsilon
@@ -74,10 +75,7 @@ class EffectiveRank(LayerMetric):
             X = X.reshape(X.size(0), -1)
 
         n, d = X.shape
-        use_rsvd = (
-            self.use_randomized_svd
-            and min(n, d) > 2 * self.n_components
-        )
+        use_rsvd = self.use_randomized_svd and min(n, d) > 2 * self.n_components
 
         try:
             if use_rsvd:
@@ -109,7 +107,7 @@ class EffectiveRank(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         _cached_activations: Optional[List[torch.Tensor]] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute effective rank for the layer.
@@ -125,10 +123,7 @@ class EffectiveRank(LayerMetric):
             activations = _cached_activations
         else:
             activations = self._get_layer_activations(
-                model=model,
-                layer=layer,
-                data_loader=data_loader,
-                num_batches=self.num_batches
+                model=model, layer=layer, data_loader=data_loader, num_batches=self.num_batches
             )
 
         if activations:
@@ -142,11 +137,11 @@ class EffectiveRank(LayerMetric):
             else:
                 X_flat = X
 
-            frobenius_norm = torch.norm(X_flat, p='fro').item()
+            frobenius_norm = torch.norm(X_flat, p="fro").item()
             spectral_norm = torch.norm(X_flat, p=2).item()
 
             if spectral_norm > 0:
-                stable_rank = (frobenius_norm ** 2) / (spectral_norm ** 2)
+                stable_rank = (frobenius_norm**2) / (spectral_norm**2)
             else:
                 stable_rank = 0.0
 

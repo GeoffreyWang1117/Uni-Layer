@@ -9,7 +9,8 @@
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 
@@ -63,7 +64,7 @@ class LayerMetric(ABC):
         requires_gradient: bool = False,
         requires_data: bool = True,
         batch_size: int = 32,
-        **kwargs
+        **kwargs,
     ):
         """
         初始化层贡献度指标
@@ -92,7 +93,7 @@ class LayerMetric(ABC):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         计算层贡献度指标（抽象方法，必须由子类实现）
@@ -160,11 +161,7 @@ class LayerMetric(ABC):
         pass
 
     def _get_layer_activations(
-        self,
-        model: nn.Module,
-        layer: nn.Module,
-        data_loader: Any,
-        num_batches: int = 10
+        self, model: nn.Module, layer: nn.Module, data_loader: Any, num_batches: int = 10
     ) -> List[torch.Tensor]:
         """
         提取层激活的辅助方法
@@ -258,7 +255,7 @@ class LayerMetric(ABC):
         layer: nn.Module,
         data_loader: Any,
         criterion: nn.Module,
-        num_batches: int = 10
+        num_batches: int = 10,
     ) -> List[torch.Tensor]:
         """
         提取层梯度的辅助方法
@@ -369,10 +366,7 @@ class LayerMetric(ABC):
     def __repr__(self) -> str:
         """返回指标的字符串表示"""
         return (
-            f"{self.__class__.__name__}("
-            f"name='{self.name}', "
-            f"category='{self.category}'"
-            f")"
+            f"{self.__class__.__name__}(" f"name='{self.name}', " f"category='{self.category}'" f")"
         )
 
 
@@ -392,21 +386,17 @@ if __name__ == "__main__":
                 name="activation_mean",
                 category="statistics",
                 requires_gradient=False,  # 不需要梯度
-                requires_data=True,       # 需要数据
-                **kwargs
+                requires_data=True,  # 需要数据
+                **kwargs,
             )
             self.num_batches = num_batches
 
-        def compute(self, model, layer, layer_name, layer_idx,
-                   data_loader, device, **kwargs):
+        def compute(self, model, layer, layer_name, layer_idx, data_loader, device, **kwargs):
             """计算激活均值"""
 
             # 使用基类提供的辅助方法提取激活
             activations = self._get_layer_activations(
-                model=model,
-                layer=layer,
-                data_loader=data_loader,
-                num_batches=self.num_batches
+                model=model, layer=layer, data_loader=data_loader, num_batches=self.num_batches
             )
 
             if not activations:
@@ -419,10 +409,7 @@ if __name__ == "__main__":
             mean_value = all_acts.mean().item()
             std_value = all_acts.std().item()
 
-            return {
-                self.name: mean_value,
-                f"{self.name}_std": std_value
-            }
+            return {self.name: mean_value, f"{self.name}_std": std_value}
 
     # 测试
     print("LayerMetric基类使用示例")

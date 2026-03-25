@@ -2,10 +2,11 @@
 Jacobian Rank metric for measuring layer expressiveness.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import model_forward
@@ -28,18 +29,13 @@ class JacobianRank(LayerMetric):
         rank_threshold: Threshold for considering singular values (relative to max)
     """
 
-    def __init__(
-        self,
-        num_samples: int = 100,
-        rank_threshold: float = 1e-3,
-        **kwargs
-    ):
+    def __init__(self, num_samples: int = 100, rank_threshold: float = 1e-3, **kwargs):
         super().__init__(
             name="jacobian_rank",
             category="representation",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_samples = num_samples
         self.rank_threshold = rank_threshold
@@ -52,7 +48,7 @@ class JacobianRank(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute Jacobian rank for the layer.
@@ -102,10 +98,7 @@ class JacobianRank(LayerMetric):
 
                             # Compute gradient w.r.t. input
                             jacobian = torch.autograd.grad(
-                                scalar_output,
-                                inputs,
-                                retain_graph=True,
-                                create_graph=False
+                                scalar_output, inputs, retain_graph=True, create_graph=False
                             )[0]
 
                             jacobians.append(jacobian[i].detach().cpu().flatten())
@@ -131,12 +124,14 @@ class JacobianRank(LayerMetric):
                 if S[-1] > 0:
                     condition_number = (S[0] / S[-1]).item()
                 else:
-                    condition_number = float('inf')
+                    condition_number = float("inf")
 
                 return {
                     "jacobian_rank": float(rank),
                     "jacobian_rank_ratio": float(rank / len(S)),
-                    "jacobian_condition": float(condition_number) if condition_number != float('inf') else 1e10,
+                    "jacobian_condition": (
+                        float(condition_number) if condition_number != float("inf") else 1e10
+                    ),
                     "jacobian_max_sv": float(S[0].item()),
                 }
 

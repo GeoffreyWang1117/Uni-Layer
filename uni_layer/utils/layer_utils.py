@@ -2,10 +2,11 @@
 Utilities for extracting and identifying layers from different model architectures.
 """
 
+from collections import OrderedDict
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
-from collections import OrderedDict
-from typing import Dict, List, Tuple, Optional
 
 
 def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]]:
@@ -156,7 +157,10 @@ def identify_layer_type(layer: nn.Module) -> str:
     if hasattr(layer, "self_attn") or hasattr(layer, "attn") or hasattr(layer, "attention"):
         return "transformer_block"
     class_lower = layer.__class__.__name__.lower()
-    if any(k in class_lower for k in ("layer", "block", "decoder")) and len(list(layer.children())) >= 2:
+    if (
+        any(k in class_lower for k in ("layer", "block", "decoder"))
+        and len(list(layer.children())) >= 2
+    ):
         return "transformer_block"
     elif isinstance(layer, (nn.Linear, nn.LazyLinear)):
         return "linear"

@@ -9,8 +9,8 @@ Usage:
 """
 
 import argparse
-import sys
 import json
+import sys
 
 
 def cmd_info(args):
@@ -26,6 +26,7 @@ def cmd_info(args):
     # PyTorch
     try:
         import torch
+
         cuda = torch.cuda.is_available()
         device = torch.cuda.get_device_name(0) if cuda else "N/A"
         print(f"PyTorch      {torch.__version__}")
@@ -35,6 +36,7 @@ def cmd_info(args):
 
     # Metric count
     from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+
     print(f"Metrics      {len(METRIC_PRIMARY_KEYS)}")
 
     # Optional deps
@@ -59,13 +61,13 @@ def cmd_list_metrics(args):
     from uni_layer.core.schema import METRIC_OUTPUT_KEYS, METRIC_PRIMARY_KEYS
 
     categories = {
-        "Optimization":       ["gradient_norm", "hessian_trace", "fisher_information"],
-        "Spectral":           ["cka", "effective_rank", "ntk_trace"],
-        "Information Theory":  ["activation_entropy", "mutual_information"],
-        "Representation":     ["jacobian_rank", "block_influence"],
-        "Robustness":         ["droplayer_robustness"],
-        "Bayesian":           ["laplace_posterior"],
-        "Architecture":       ["attention_flow"],
+        "Optimization": ["gradient_norm", "hessian_trace", "fisher_information"],
+        "Spectral": ["cka", "effective_rank", "ntk_trace"],
+        "Information Theory": ["activation_entropy", "mutual_information"],
+        "Representation": ["jacobian_rank", "block_influence"],
+        "Robustness": ["droplayer_robustness"],
+        "Bayesian": ["laplace_posterior"],
+        "Architecture": ["attention_flow"],
     }
 
     metric_classes = {
@@ -128,20 +130,34 @@ def cmd_analyze(args):
 
     # Parse metrics
     from uni_layer.metrics import (
-        GradientNorm, HessianTrace, FisherInformation,
-        CKA, EffectiveRank, NTKTrace,
-        MutualInformation, ActivationEntropy,
-        JacobianRank, BlockInfluence,
-        DropLayerRobustness, LaplacePosterior, AttentionFlow,
+        CKA,
+        ActivationEntropy,
+        AttentionFlow,
+        BlockInfluence,
+        DropLayerRobustness,
+        EffectiveRank,
+        FisherInformation,
+        GradientNorm,
+        HessianTrace,
+        JacobianRank,
+        LaplacePosterior,
+        MutualInformation,
+        NTKTrace,
     )
 
     METRIC_MAP = {
-        "GradientNorm": GradientNorm, "HessianTrace": HessianTrace,
-        "FisherInformation": FisherInformation, "CKA": CKA,
-        "EffectiveRank": EffectiveRank, "NTKTrace": NTKTrace,
-        "MutualInformation": MutualInformation, "ActivationEntropy": ActivationEntropy,
-        "JacobianRank": JacobianRank, "BlockInfluence": BlockInfluence,
-        "DropLayerRobustness": DropLayerRobustness, "LaplacePosterior": LaplacePosterior,
+        "GradientNorm": GradientNorm,
+        "HessianTrace": HessianTrace,
+        "FisherInformation": FisherInformation,
+        "CKA": CKA,
+        "EffectiveRank": EffectiveRank,
+        "NTKTrace": NTKTrace,
+        "MutualInformation": MutualInformation,
+        "ActivationEntropy": ActivationEntropy,
+        "JacobianRank": JacobianRank,
+        "BlockInfluence": BlockInfluence,
+        "DropLayerRobustness": DropLayerRobustness,
+        "LaplacePosterior": LaplacePosterior,
         "AttentionFlow": AttentionFlow,
     }
 
@@ -149,7 +165,10 @@ def cmd_analyze(args):
     metric_objs = []
     for name in requested:
         if name not in METRIC_MAP:
-            print(f"Error: Unknown metric '{name}'. Available: {', '.join(METRIC_MAP)}", file=sys.stderr)
+            print(
+                f"Error: Unknown metric '{name}'. Available: {', '.join(METRIC_MAP)}",
+                file=sys.stderr,
+            )
             sys.exit(1)
         metric_objs.append(METRIC_MAP[name](num_batches=num_batches))
 
@@ -157,15 +176,19 @@ def cmd_analyze(args):
     print(f"Loading model: {model_name}")
     try:
         from transformers import AutoModel, AutoTokenizer
+
         model = AutoModel.from_pretrained(model_name, trust_remote_code=True)
         tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
         # Generate dummy data
         texts = ["The quick brown fox jumps over the lazy dog."] * (num_batches * 16)
-        encoded = tokenizer(texts, return_tensors="pt", padding=True, truncation=True, max_length=64)
+        encoded = tokenizer(
+            texts, return_tensors="pt", padding=True, truncation=True, max_length=64
+        )
         input_ids = encoded["input_ids"]
 
         from torch.utils.data import DataLoader, TensorDataset
+
         dummy_labels = torch.zeros(input_ids.size(0), dtype=torch.long)
         data_loader = DataLoader(TensorDataset(input_ids, dummy_labels), batch_size=16)
         hf_mode = True
@@ -181,12 +204,17 @@ def cmd_analyze(args):
     # Analyze
     model = model.to(device)
     from uni_layer import LayerAnalyzer
+
     analyzer = LayerAnalyzer(model, task_type="classification", device=device)
 
-    print(f"Running {len(metric_objs)} metrics on {len(analyzer.layers)} layers (batches={num_batches})...")
+    print(
+        f"Running {len(metric_objs)} metrics on {len(analyzer.layers)} layers (batches={num_batches})..."
+    )
     contributions = analyzer.compute_metrics(
-        metrics=metric_objs, data_loader=data_loader,
-        verbose=True, num_batches=num_batches,
+        metrics=metric_objs,
+        data_loader=data_loader,
+        verbose=True,
+        num_batches=num_batches,
     )
 
     # Output
@@ -204,6 +232,7 @@ def cmd_analyze(args):
         # Print table to stdout
         primary_keys = [m.name for m in metric_objs]
         from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+
         pk_names = [METRIC_PRIMARY_KEYS.get(pk, pk) for pk in primary_keys]
 
         header = f"{'Layer':<35} {'Type':<20}"
@@ -263,25 +292,37 @@ Documentation: https://github.com/GeoffreyWang1117/Uni-Layer""",
 
     # list-metrics
     lm = sub.add_parser("list-metrics", help="List all available metrics")
-    lm.add_argument("--format", choices=["table", "json"], default="table",
-                     help="Output format (default: table)")
+    lm.add_argument(
+        "--format",
+        choices=["table", "json"],
+        default="table",
+        help="Output format (default: table)",
+    )
 
     # analyze
     az = sub.add_parser("analyze", help="Analyze a HuggingFace model")
     az.add_argument("model", help="HuggingFace model name or path (e.g. bert-base-uncased)")
-    az.add_argument("-m", "--metrics", default="GradientNorm,BlockInfluence,EffectiveRank",
-                    help="Comma-separated metrics (default: GradientNorm,BlockInfluence,EffectiveRank)")
-    az.add_argument("-o", "--output", default=None,
-                    help="Save results to JSON file (default: print table)")
-    az.add_argument("-d", "--device", default="cpu", choices=["cpu", "cuda"],
-                    help="Device (default: cpu)")
-    az.add_argument("-n", "--num-batches", type=int, default=3,
-                    help="Number of data batches (default: 3)")
+    az.add_argument(
+        "-m",
+        "--metrics",
+        default="GradientNorm,BlockInfluence,EffectiveRank",
+        help="Comma-separated metrics (default: GradientNorm,BlockInfluence,EffectiveRank)",
+    )
+    az.add_argument(
+        "-o", "--output", default=None, help="Save results to JSON file (default: print table)"
+    )
+    az.add_argument(
+        "-d", "--device", default="cpu", choices=["cpu", "cuda"], help="Device (default: cpu)"
+    )
+    az.add_argument(
+        "-n", "--num-batches", type=int, default=3, help="Number of data batches (default: 3)"
+    )
 
     args = parser.parse_args()
 
     if args.version:
         import uni_layer
+
         print(f"uni-layer {uni_layer.__version__}")
         return
 

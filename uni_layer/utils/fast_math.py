@@ -5,9 +5,10 @@ Provides optimized versions of expensive linear algebra operations
 used across multiple metrics, specifically designed for large-scale models.
 """
 
-import torch
-import numpy as np
 from typing import Optional, Tuple
+
+import numpy as np
+import torch
 
 
 def randomized_svd(
@@ -139,7 +140,7 @@ def minibatch_cka(
     indices = torch.randperm(N)
 
     for start in range(0, N - batch_size + 1, batch_size):
-        idx = indices[start:start + batch_size]
+        idx = indices[start : start + batch_size]
         X_batch = X[idx]
         Y_batch = Y[idx]
 
@@ -226,17 +227,12 @@ def hutchinson_trace_estimator(
 
     for _ in range(num_samples):
         # Rademacher random vectors (+-1) have lower variance than Gaussian
-        vs = [torch.randint(0, 2, p.shape, device=device).float() * 2 - 1
-              for p in params]
+        vs = [torch.randint(0, 2, p.shape, device=device).float() * 2 - 1 for p in params]
 
         hvs = hvp_fn(vs)
 
         if hvs is not None:
-            trace_sample = sum(
-                (v * hv).sum().item()
-                for v, hv in zip(vs, hvs)
-                if hv is not None
-            )
+            trace_sample = sum((v * hv).sum().item() for v, hv in zip(vs, hvs) if hv is not None)
             trace_sum += trace_sample
 
     return trace_sum / num_samples

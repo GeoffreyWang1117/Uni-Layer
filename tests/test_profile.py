@@ -2,29 +2,30 @@
 Tests for LayerProfile auto-analyzer and LLM presets.
 """
 
-import pytest
 import json
+from collections import OrderedDict
+
+import pytest
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
-from collections import OrderedDict
 
-from uni_layer.core.profile import LayerProfile
 from uni_layer import LayerAnalyzer
-
+from uni_layer.core.profile import LayerProfile
 
 # ------------------------------------------------------------------
 # Fixtures
 # ------------------------------------------------------------------
+
 
 @pytest.fixture
 def contributions_8layer():
     """Simulates 8-layer transformer contributions with realistic patterns."""
     data = OrderedDict()
     # U-shaped gradient norm, decreasing block influence, one bottleneck at layer 5
-    gn =  [0.12, 0.08, 0.05, 0.04, 0.03, 0.04, 0.07, 0.15]
-    bi =  [0.05, 0.04, 0.03, 0.02, 0.01, 0.01, 0.02, 0.03]
-    er =  [90.0, 88.0, 85.0, 82.0, 50.0, 80.0, 86.0, 92.0]  # bottleneck at 4
+    gn = [0.12, 0.08, 0.05, 0.04, 0.03, 0.04, 0.07, 0.15]
+    bi = [0.05, 0.04, 0.03, 0.02, 0.01, 0.01, 0.02, 0.03]
+    er = [90.0, 88.0, 85.0, 82.0, 50.0, 80.0, 86.0, 92.0]  # bottleneck at 4
     cka = [0.30, 0.40, 0.50, 0.55, 0.60, 0.70, 0.85, 1.00]
     for i in range(8):
         data[f"layers.{i}"] = {
@@ -56,9 +57,12 @@ def contributions_with_redundancy():
 @pytest.fixture
 def simple_model():
     return nn.Sequential(
-        nn.Linear(10, 32), nn.ReLU(),
-        nn.Linear(32, 32), nn.ReLU(),
-        nn.Linear(32, 16), nn.ReLU(),
+        nn.Linear(10, 32),
+        nn.ReLU(),
+        nn.Linear(32, 32),
+        nn.ReLU(),
+        nn.Linear(32, 16),
+        nn.ReLU(),
         nn.Linear(16, 5),
     )
 
@@ -73,6 +77,7 @@ def simple_data():
 # ------------------------------------------------------------------
 # LayerProfile tests
 # ------------------------------------------------------------------
+
 
 class TestLayerProfile:
     def test_init(self, contributions_8layer):
@@ -267,12 +272,15 @@ class TestToDict:
 # Preset tests
 # ------------------------------------------------------------------
 
+
 class TestPresets:
     def test_preset_llm_fast(self, simple_model, simple_data):
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         results = analyzer.compute_metrics(
-            data_loader=simple_data, verbose=False,
-            preset="llm_fast", num_batches=1,
+            data_loader=simple_data,
+            verbose=False,
+            preset="llm_fast",
+            num_batches=1,
         )
         assert len(results) > 0
         # Should contain activation-based metrics
@@ -282,8 +290,10 @@ class TestPresets:
     def test_preset_quick(self, simple_model, simple_data):
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         results = analyzer.compute_metrics(
-            data_loader=simple_data, verbose=False,
-            preset="quick", num_batches=1,
+            data_loader=simple_data,
+            verbose=False,
+            preset="quick",
+            num_batches=1,
         )
         sample = list(results.values())[0]
         assert "gradient_norm" in sample
@@ -292,7 +302,8 @@ class TestPresets:
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         with pytest.raises(ValueError, match="Unknown preset"):
             analyzer.compute_metrics(
-                data_loader=simple_data, preset="nonexistent",
+                data_loader=simple_data,
+                preset="nonexistent",
             )
 
     def test_no_metrics_no_preset_raises(self, simple_model, simple_data):
@@ -305,12 +316,15 @@ class TestPresets:
 # End-to-end: compute_metrics → LayerProfile
 # ------------------------------------------------------------------
 
+
 class TestEndToEnd:
     def test_full_pipeline(self, simple_model, simple_data):
         analyzer = LayerAnalyzer(simple_model, task_type="classification")
         contributions = analyzer.compute_metrics(
-            data_loader=simple_data, verbose=False,
-            preset="quick", num_batches=1,
+            data_loader=simple_data,
+            verbose=False,
+            preset="quick",
+            num_batches=1,
         )
         profile = LayerProfile(contributions, model_name="test-mlp")
         d = profile.to_dict()

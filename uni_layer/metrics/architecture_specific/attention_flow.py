@@ -7,11 +7,12 @@ Optimized version:
 - Accepts cached activations to avoid redundant forward passes
 """
 
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, Any, Optional, List
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import model_forward
@@ -32,18 +33,13 @@ class AttentionFlow(LayerMetric):
         analyze_heads: Whether to analyze individual heads
     """
 
-    def __init__(
-        self,
-        num_batches: int = 10,
-        analyze_heads: bool = True,
-        **kwargs
-    ):
+    def __init__(self, num_batches: int = 10, analyze_heads: bool = True, **kwargs):
         super().__init__(
             name="attention_flow",
             category="architecture_specific",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.analyze_heads = analyze_heads
@@ -52,9 +48,9 @@ class AttentionFlow(LayerMetric):
         """Check if layer is an attention layer"""
         return (
             isinstance(layer, nn.MultiheadAttention)
-            or hasattr(layer, 'self_attn')
-            or hasattr(layer, 'attn')
-            or 'attention' in layer.__class__.__name__.lower()
+            or hasattr(layer, "self_attn")
+            or hasattr(layer, "attn")
+            or "attention" in layer.__class__.__name__.lower()
         )
 
     def _compute_attention_entropy(self, attn_weights: torch.Tensor) -> float:
@@ -123,7 +119,7 @@ class AttentionFlow(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute attention flow metrics for the layer.

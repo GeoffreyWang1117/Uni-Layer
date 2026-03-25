@@ -6,9 +6,9 @@ import pytest
 import torch.nn as nn
 
 from uni_layer.integrations import (
-    TorchPruningBridge,
-    HuggingFacePEFTBridge,
     DistillationBridge,
+    HuggingFacePEFTBridge,
+    TorchPruningBridge,
 )
 
 
@@ -78,7 +78,10 @@ class TestHuggingFacePEFTBridge:
         bridge = HuggingFacePEFTBridge(model, contributions)
         targets = bridge.recommend_target_modules("gradient_norm")
         ranks = bridge.recommend_adaptive_ranks(
-            "gradient_norm", base_rank=8, max_rank=64, target_modules=targets,
+            "gradient_norm",
+            base_rank=8,
+            max_rank=64,
+            target_modules=targets,
         )
         for name, rank in ranks.items():
             assert rank >= 8

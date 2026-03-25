@@ -1,13 +1,13 @@
 """Tests for fast math utilities (randomized SVD, minibatch CKA, etc.)"""
 
-import torch
 import numpy as np
 import pytest
+import torch
 
 from uni_layer.utils.fast_math import (
-    randomized_svd,
     effective_rank_from_svd,
     minibatch_cka,
+    randomized_svd,
 )
 
 

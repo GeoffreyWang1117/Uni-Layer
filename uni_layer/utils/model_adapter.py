@@ -3,9 +3,10 @@ Utilities for adapting different model output formats (HuggingFace, custom, etc.
 to the standard tensor format expected by Uni-Layer metrics.
 """
 
+from typing import Any, Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
-from typing import Any, Optional, Tuple, Union
 
 
 def extract_logits(outputs: Any) -> torch.Tensor:
@@ -111,6 +112,7 @@ def model_forward(
     forward_params = set()
     try:
         import inspect
+
         sig = inspect.signature(model.forward)
         forward_params = set(sig.parameters.keys())
     except (ValueError, TypeError):

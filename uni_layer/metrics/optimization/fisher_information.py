@@ -2,10 +2,11 @@
 Fisher Information metric for measuring layer importance.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import extract_logits, model_forward
@@ -27,18 +28,13 @@ class FisherInformation(LayerMetric):
         empirical: Whether to use empirical Fisher (True) or true Fisher (False)
     """
 
-    def __init__(
-        self,
-        num_batches: int = 10,
-        empirical: bool = True,
-        **kwargs
-    ):
+    def __init__(self, num_batches: int = 10, empirical: bool = True, **kwargs):
         super().__init__(
             name="fisher_information",
             category="optimization",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.empirical = empirical
@@ -52,7 +48,7 @@ class FisherInformation(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         criterion: Optional[nn.Module] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute Fisher Information for the layer.
@@ -121,6 +117,9 @@ class FisherInformation(LayerMetric):
 
         return {
             "fisher_information": float(fisher_trace),
-            "fisher_mean": float(fisher_trace / sum(f.numel() for f in fisher_diag.values()))
-            if fisher_diag else 0.0,
+            "fisher_mean": (
+                float(fisher_trace / sum(f.numel() for f in fisher_diag.values()))
+                if fisher_diag
+                else 0.0
+            ),
         }

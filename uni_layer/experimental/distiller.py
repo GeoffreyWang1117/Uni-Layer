@@ -5,8 +5,9 @@ Auto-selects distillation layers and implements intermediate layer distillation
 with temperature scaling.
 """
 
-from typing import Dict, List, Optional, Tuple, Callable
 from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -15,6 +16,7 @@ import torch.nn.functional as F
 @dataclass
 class DistillationConfig:
     """Configuration for knowledge distillation"""
+
     temperature: float = 4.0  # Softmax temperature for soft targets
     alpha: float = 0.5  # Weight for distillation loss (vs. hard target loss)
     layer_weight: float = 0.3  # Weight for intermediate layer loss
@@ -69,7 +71,7 @@ class KnowledgeDistiller:
         teacher_model: nn.Module,
         student_model: nn.Module,
         contributions: Dict[str, Dict[str, float]],
-        config: DistillationConfig = None
+        config: DistillationConfig = None,
     ):
         self.teacher = teacher_model
         self.student = student_model
@@ -103,40 +105,28 @@ class KnowledgeDistiller:
             score = 0.0
 
             # Prefer layers with high CKA (if available)
-            if 'cka_score' in metrics:
-                score += 2.0 * metrics['cka_score']
+            if "cka_score" in metrics:
+                score += 2.0 * metrics["cka_score"]
 
             # Prefer layers with high gradient norm
-            if 'gradient_norm' in metrics:
+            if "gradient_norm" in metrics:
                 # Normalize by max
-                max_grad = max(
-                    m.get('gradient_norm', 0)
-                    for m in self.contributions.values()
-                )
+                max_grad = max(m.get("gradient_norm", 0) for m in self.contributions.values())
                 if max_grad > 0:
-                    score += metrics['gradient_norm'] / max_grad
+                    score += metrics["gradient_norm"] / max_grad
 
             # Prefer layers with high effective rank (rich representations)
-            if 'effective_rank' in metrics:
-                max_rank = max(
-                    m.get('effective_rank', 0)
-                    for m in self.contributions.values()
-                )
+            if "effective_rank" in metrics:
+                max_rank = max(m.get("effective_rank", 0) for m in self.contributions.values())
                 if max_rank > 0:
-                    score += metrics['effective_rank'] / max_rank
+                    score += metrics["effective_rank"] / max_rank
 
             layer_scores[layer_name] = score
 
         # Sort by score and select top-k
-        sorted_layers = sorted(
-            layer_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_layers = sorted(layer_scores.items(), key=lambda x: x[1], reverse=True)
 
-        top_layers = [
-            name for name, _ in sorted_layers[:self.config.top_k_layers]
-        ]
+        top_layers = [name for name, _ in sorted_layers[: self.config.top_k_layers]]
 
         # Try to match teacher layers to student layers
         # Simple heuristic: match by relative depth
@@ -174,6 +164,7 @@ class KnowledgeDistiller:
         def get_activation(name, storage):
             def hook(module, input, output):
                 storage[name] = output.detach()
+
             return hook
 
         # Register hooks for teacher
@@ -203,9 +194,7 @@ class KnowledgeDistiller:
         self.student_activations.clear()
 
     def _compute_soft_loss(
-        self,
-        student_logits: torch.Tensor,
-        teacher_logits: torch.Tensor
+        self, student_logits: torch.Tensor, teacher_logits: torch.Tensor
     ) -> torch.Tensor:
         """
         Compute soft target distillation loss.
@@ -228,11 +217,7 @@ class KnowledgeDistiller:
         soft_student = F.log_softmax(student_logits / T, dim=-1)
 
         # KL divergence loss
-        loss = F.kl_div(
-            soft_student,
-            soft_teacher,
-            reduction='batchmean'
-        ) * (T * T)
+        loss = F.kl_div(soft_student, soft_teacher, reduction="batchmean") * (T * T)
 
         return loss
 
@@ -282,7 +267,7 @@ class KnowledgeDistiller:
                 teacher_prob = F.softmax(teacher_act.view(teacher_act.size(0), -1), dim=1)
                 student_log_prob = F.log_softmax(student_act.view(student_act.size(0), -1), dim=1)
 
-                loss = F.kl_div(student_log_prob, teacher_prob, reduction='batchmean')
+                loss = F.kl_div(student_log_prob, teacher_prob, reduction="batchmean")
             else:
                 raise ValueError(f"Unknown distance metric: {self.config.distance_metric}")
 
@@ -291,9 +276,7 @@ class KnowledgeDistiller:
         return total_loss / num_layers if num_layers > 0 else torch.tensor(0.0)
 
     def _project_activation(
-        self,
-        student_act: torch.Tensor,
-        target_shape: torch.Size
+        self, student_act: torch.Tensor, target_shape: torch.Size
     ) -> torch.Tensor:
         """
         Project student activation to match teacher shape.
@@ -319,11 +302,7 @@ class KnowledgeDistiller:
             # Handle channel dimension mismatch
             if projected.size(1) != C:
                 # Simple channel projection (could use learnable projection)
-                projected = F.interpolate(
-                    projected,
-                    size=(C, H, W),
-                    mode='nearest'
-                )
+                projected = F.interpolate(projected, size=(C, H, W), mode="nearest")
 
             return projected
 
@@ -333,19 +312,13 @@ class KnowledgeDistiller:
             # Interpolate sequence length
             if student_act.size(1) != L:
                 student_act = F.interpolate(
-                    student_act.transpose(1, 2),
-                    size=L,
-                    mode='linear',
-                    align_corners=False
+                    student_act.transpose(1, 2), size=L, mode="linear", align_corners=False
                 ).transpose(1, 2)
 
             # Interpolate feature dimension
             if student_act.size(2) != D:
                 student_act = F.interpolate(
-                    student_act.transpose(1, 2),
-                    size=D,
-                    mode='linear',
-                    align_corners=False
+                    student_act.transpose(1, 2), size=D, mode="linear", align_corners=False
                 ).transpose(1, 2)
 
             return student_act
@@ -356,10 +329,7 @@ class KnowledgeDistiller:
             if student_act.size(1) != D:
                 # Linear interpolation
                 student_act = F.interpolate(
-                    student_act.unsqueeze(1),
-                    size=D,
-                    mode='linear',
-                    align_corners=False
+                    student_act.unsqueeze(1), size=D, mode="linear", align_corners=False
                 ).squeeze(1)
 
             return student_act
@@ -367,10 +337,7 @@ class KnowledgeDistiller:
         return student_act
 
     def compute_loss(
-        self,
-        student_logits: torch.Tensor,
-        teacher_logits: torch.Tensor,
-        labels: torch.Tensor
+        self, student_logits: torch.Tensor, teacher_logits: torch.Tensor, labels: torch.Tensor
     ) -> Tuple[torch.Tensor, Dict[str, float]]:
         """
         Compute total distillation loss.
@@ -396,25 +363,22 @@ class KnowledgeDistiller:
 
         # Combine losses
         total_loss = (
-            self.config.alpha * loss_soft +
-            (1 - self.config.alpha) * loss_hard +
-            self.config.layer_weight * loss_layer
+            self.config.alpha * loss_soft
+            + (1 - self.config.alpha) * loss_hard
+            + self.config.layer_weight * loss_layer
         )
 
         loss_components = {
-            'total': total_loss.item(),
-            'soft': loss_soft.item(),
-            'hard': loss_hard.item(),
-            'layer': loss_layer.item()
+            "total": total_loss.item(),
+            "soft": loss_soft.item(),
+            "hard": loss_hard.item(),
+            "layer": loss_layer.item(),
         }
 
         return total_loss, loss_components
 
     def train_step(
-        self,
-        inputs: torch.Tensor,
-        labels: torch.Tensor,
-        optimizer: torch.optim.Optimizer
+        self, inputs: torch.Tensor, labels: torch.Tensor, optimizer: torch.optim.Optimizer
     ) -> Dict[str, float]:
         """
         Perform one training step with distillation.
@@ -443,11 +407,7 @@ class KnowledgeDistiller:
         student_logits = self.student(inputs)
 
         # Compute distillation loss
-        loss, loss_components = self.compute_loss(
-            student_logits,
-            teacher_logits,
-            labels
-        )
+        loss, loss_components = self.compute_loss(student_logits, teacher_logits, labels)
 
         # Backward pass
         optimizer.zero_grad()
@@ -464,12 +424,12 @@ class KnowledgeDistiller:
             Dictionary with distillation details
         """
         return {
-            'temperature': self.config.temperature,
-            'alpha': self.config.alpha,
-            'layer_weight': self.config.layer_weight,
-            'distance_metric': self.config.distance_metric,
-            'num_distillation_layers': len(self.distillation_layers),
-            'distillation_layers': self.distillation_layers,
+            "temperature": self.config.temperature,
+            "alpha": self.config.alpha,
+            "layer_weight": self.config.layer_weight,
+            "distance_metric": self.config.distance_metric,
+            "num_distillation_layers": len(self.distillation_layers),
+            "distillation_layers": self.distillation_layers,
         }
 
     def __del__(self):

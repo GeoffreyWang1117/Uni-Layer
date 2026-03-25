@@ -4,11 +4,12 @@ All metrics inherit from this class and implement the compute() method.
 """
 
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Optional, List
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 
-from uni_layer.utils.model_adapter import extract_logits, compute_loss, model_forward
+from uni_layer.utils.model_adapter import compute_loss, extract_logits, model_forward
 
 
 class LayerMetric(ABC):
@@ -33,7 +34,7 @@ class LayerMetric(ABC):
         requires_gradient: bool = False,
         requires_data: bool = True,
         batch_size: int = 32,
-        **kwargs
+        **kwargs,
     ):
         self.name = name
         self.category = category
@@ -51,7 +52,7 @@ class LayerMetric(ABC):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute the layer contribution metric.

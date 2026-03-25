@@ -9,10 +9,11 @@ accumulate ||grad_i||^2 for each sample without storing the full J matrix.
 Memory: O(P) instead of O(S*P).
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import extract_logits, model_forward
@@ -36,18 +37,13 @@ class NTKTrace(LayerMetric):
         num_classes: Number of output classes (for classification)
     """
 
-    def __init__(
-        self,
-        num_samples: int = 100,
-        num_classes: Optional[int] = None,
-        **kwargs
-    ):
+    def __init__(self, num_samples: int = 100, num_classes: Optional[int] = None, **kwargs):
         super().__init__(
             name="ntk_trace",
             category="spectral",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_samples = num_samples
         self.num_classes = num_classes
@@ -60,7 +56,7 @@ class NTKTrace(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute NTK trace for the layer using incremental accumulation.
@@ -98,7 +94,7 @@ class NTKTrace(LayerMetric):
 
             for i in range(batch_size):
                 model.zero_grad()
-                x = inputs[i:i+1]
+                x = inputs[i : i + 1]
 
                 output = extract_logits(model_forward(model, x))
 
@@ -112,7 +108,7 @@ class NTKTrace(LayerMetric):
                 grad_norm_sq = 0.0
                 for param in params:
                     if param.grad is not None:
-                        grad_norm_sq += (param.grad ** 2).sum().item()
+                        grad_norm_sq += (param.grad**2).sum().item()
 
                 trace_sum += grad_norm_sq
 

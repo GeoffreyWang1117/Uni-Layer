@@ -5,16 +5,18 @@ Supports structured and unstructured pruning with differential strategies
 based on layer importance metrics.
 """
 
-from typing import Dict, List, Optional, Union
+import copy
 from enum import Enum
+from typing import Dict, List, Optional, Union
+
 import torch
 import torch.nn as nn
 import torch.nn.utils.prune as prune
-import copy
 
 
 class PruningStrategy(Enum):
     """Pruning strategies based on layer contributions"""
+
     MAGNITUDE = "magnitude"  # Standard magnitude-based pruning
     GRADIENT_NORM = "gradient_norm"  # Based on gradient norm metric
     FISHER = "fisher"  # Based on Fisher information
@@ -57,7 +59,7 @@ class LayerPruner:
         self,
         model: nn.Module,
         contributions: Dict[str, Dict[str, float]],
-        strategy: PruningStrategy = PruningStrategy.GRADIENT_NORM
+        strategy: PruningStrategy = PruningStrategy.GRADIENT_NORM,
     ):
         self.model = model
         self.contributions = contributions
@@ -70,7 +72,7 @@ class LayerPruner:
         base_ratio: float = 0.3,
         max_ratio: float = 0.8,
         min_ratio: float = 0.1,
-        metric_name: str = "gradient_norm"
+        metric_name: str = "gradient_norm",
     ) -> Dict[str, float]:
         """
         Compute differential pruning ratios for each layer.
@@ -102,8 +104,7 @@ class LayerPruner:
             return {name: base_ratio for name in metric_values.keys()}
 
         normalized = {
-            name: (val - min_val) / (max_val - min_val)
-            for name, val in metric_values.items()
+            name: (val - min_val) / (max_val - min_val) for name, val in metric_values.items()
         }
 
         # Compute differential pruning ratios
@@ -117,9 +118,7 @@ class LayerPruner:
         return pruning_ratios
 
     def prune_unstructured(
-        self,
-        pruning_ratios: Optional[Dict[str, float]] = None,
-        global_pruning: bool = False
+        self, pruning_ratios: Optional[Dict[str, float]] = None, global_pruning: bool = False
     ) -> nn.Module:
         """
         Apply unstructured (weight-level) pruning.
@@ -144,8 +143,8 @@ class LayerPruner:
         parameters_to_prune = []
 
         for name, module in self.pruned_model.named_modules():
-            if name in pruning_ratios and hasattr(module, 'weight'):
-                parameters_to_prune.append((module, 'weight'))
+            if name in pruning_ratios and hasattr(module, "weight"):
+                parameters_to_prune.append((module, "weight"))
 
         if global_pruning:
             # Global pruning: apply same threshold across all layers
@@ -158,19 +157,13 @@ class LayerPruner:
         else:
             # Layer-wise pruning: different threshold per layer
             for name, module in self.pruned_model.named_modules():
-                if name in pruning_ratios and hasattr(module, 'weight'):
-                    prune.l1_unstructured(
-                        module,
-                        name='weight',
-                        amount=pruning_ratios[name]
-                    )
+                if name in pruning_ratios and hasattr(module, "weight"):
+                    prune.l1_unstructured(module, name="weight", amount=pruning_ratios[name])
 
         return self.pruned_model
 
     def prune_structured(
-        self,
-        pruning_ratios: Optional[Dict[str, float]] = None,
-        dim: int = 0
+        self, pruning_ratios: Optional[Dict[str, float]] = None, dim: int = 0
     ) -> nn.Module:
         """
         Apply structured pruning (removes entire neurons/channels).
@@ -196,11 +189,7 @@ class LayerPruner:
         for name, module in self.pruned_model.named_modules():
             if name in pruning_ratios and isinstance(module, (nn.Linear, nn.Conv2d)):
                 prune.ln_structured(
-                    module,
-                    name='weight',
-                    amount=pruning_ratios[name],
-                    n=2,  # L2 norm
-                    dim=dim
+                    module, name="weight", amount=pruning_ratios[name], n=2, dim=dim  # L2 norm
                 )
 
         return self.pruned_model
@@ -210,7 +199,7 @@ class LayerPruner:
         initial_ratio: float = 0.0,
         final_ratio: float = 0.5,
         num_steps: int = 10,
-        structured: bool = False
+        structured: bool = False,
     ) -> List[nn.Module]:
         """
         Gradual pruning with progressive sparsity increase.
@@ -267,8 +256,8 @@ class LayerPruner:
             raise ValueError("No pruned model available. Run pruning first.")
 
         for module in self.pruned_model.modules():
-            if hasattr(module, 'weight') and prune.is_pruned(module):
-                prune.remove(module, 'weight')
+            if hasattr(module, "weight") and prune.is_pruned(module):
+                prune.remove(module, "weight")
 
         return self.pruned_model
 
@@ -287,7 +276,7 @@ class LayerPruner:
         layer_sparsity = {}
 
         for name, param in self.pruned_model.named_parameters():
-            if 'weight' in name:
+            if "weight" in name:
                 layer_total = param.numel()
                 layer_zero = (param == 0).sum().item()
 
@@ -298,10 +287,10 @@ class LayerPruner:
         overall_sparsity = zero_params / total_params if total_params > 0 else 0.0
 
         return {
-            'overall_sparsity': overall_sparsity,
-            'total_params': total_params,
-            'zero_params': zero_params,
-            'layer_sparsity': layer_sparsity
+            "overall_sparsity": overall_sparsity,
+            "total_params": total_params,
+            "zero_params": zero_params,
+            "layer_sparsity": layer_sparsity,
         }
 
     def estimate_speedup(self) -> Dict[str, float]:
@@ -315,11 +304,13 @@ class LayerPruner:
             Dictionary with speedup estimates
         """
         stats = self.get_sparsity_stats()
-        overall_sparsity = stats['overall_sparsity']
+        overall_sparsity = stats["overall_sparsity"]
 
         # Theoretical FLOPS reduction
         flops_reduction = overall_sparsity
-        theoretical_speedup = 1.0 / (1.0 - overall_sparsity) if overall_sparsity < 1.0 else float('inf')
+        theoretical_speedup = (
+            1.0 / (1.0 - overall_sparsity) if overall_sparsity < 1.0 else float("inf")
+        )
 
         # Practical speedup (conservative estimate)
         # Unstructured pruning: 1.0-1.2x (limited by hardware support)
@@ -327,8 +318,8 @@ class LayerPruner:
         practical_speedup = 1.0 + overall_sparsity * 0.8  # Conservative estimate
 
         return {
-            'theoretical_speedup': theoretical_speedup,
-            'practical_speedup': practical_speedup,
-            'flops_reduction': flops_reduction,
-            'memory_reduction': overall_sparsity
+            "theoretical_speedup": theoretical_speedup,
+            "practical_speedup": practical_speedup,
+            "flops_reduction": flops_reduction,
+            "memory_reduction": overall_sparsity,
         }

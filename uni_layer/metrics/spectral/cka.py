@@ -4,9 +4,10 @@ Centered Kernel Alignment (CKA) metric for comparing layer representations.
 Uses minibatch CKA for large sample counts to avoid O(N^2) memory usage.
 """
 
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional, List
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.fast_math import minibatch_cka
@@ -37,14 +38,10 @@ class CKA(LayerMetric):
         num_batches: int = 10,
         kernel: str = "linear",
         cka_batch_size: int = 256,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
-            name="cka",
-            category="spectral",
-            requires_gradient=False,
-            requires_data=True,
-            **kwargs
+            name="cka", category="spectral", requires_gradient=False, requires_data=True, **kwargs
         )
         self.compare_to = compare_to
         self.num_batches = num_batches
@@ -88,7 +85,7 @@ class CKA(LayerMetric):
         YY = (Y * Y).sum(dim=1).unsqueeze(0)
         XY = X @ Y.T
         dist = XX + YY - 2 * XY
-        return torch.exp(-dist / (2 * sigma ** 2))
+        return torch.exp(-dist / (2 * sigma**2))
 
     def compute(
         self,
@@ -99,7 +96,7 @@ class CKA(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         _cached_activations: Optional[List[torch.Tensor]] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute CKA for the layer.

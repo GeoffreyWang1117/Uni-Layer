@@ -14,10 +14,11 @@ This metric is widely used for LLM layer pruning and works well for
 any model with residual connections (Transformers, ResNets).
 """
 
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from typing import Dict, Any, Optional, List
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import model_forward
@@ -42,7 +43,7 @@ class BlockInfluence(LayerMetric):
             category="representation",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
 
@@ -54,7 +55,7 @@ class BlockInfluence(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute Block Influence for the layer.

@@ -2,10 +2,11 @@
 Gradient Norm metric for measuring layer contribution based on gradient magnitudes.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import compute_loss, model_forward
@@ -30,18 +31,14 @@ class GradientNorm(LayerMetric):
     """
 
     def __init__(
-        self,
-        norm_type: str = "l2",
-        num_batches: int = 10,
-        aggregate: str = "mean",
-        **kwargs
+        self, norm_type: str = "l2", num_batches: int = 10, aggregate: str = "mean", **kwargs
     ):
         super().__init__(
             name="gradient_norm",
             category="optimization",
             requires_gradient=True,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.norm_type = norm_type
         self.num_batches = num_batches
@@ -56,7 +53,7 @@ class GradientNorm(LayerMetric):
         data_loader: Optional[Any] = None,
         device: str = "cuda",
         criterion: Optional[nn.Module] = None,
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute gradient norm for the layer.

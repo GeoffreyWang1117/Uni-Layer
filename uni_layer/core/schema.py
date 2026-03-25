@@ -59,8 +59,7 @@ Architecture-Specific:
   AttentionFlow     -> attention_entropy, attention_max_weight, head_diversity, attention_distance
 """
 
-from typing import Dict, List, Tuple, Any, Optional, Union
-
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Type aliases for documentation and static analysis
 MetricResult = Dict[str, Optional[float]]
@@ -93,7 +92,10 @@ METRIC_PRIMARY_KEYS = {
 # All output keys per metric
 METRIC_OUTPUT_KEYS = {
     "gradient_norm": [
-        "gradient_norm", "gradient_norm_std", "gradient_norm_max", "gradient_norm_min",
+        "gradient_norm",
+        "gradient_norm_std",
+        "gradient_norm_max",
+        "gradient_norm_min",
     ],
     "hessian_trace": ["hessian_trace", "hessian_trace_std"],
     "fisher_information": ["fisher_information", "fisher_mean"],
@@ -101,17 +103,26 @@ METRIC_OUTPUT_KEYS = {
     "effective_rank": ["effective_rank", "stable_rank", "rank_ratio"],
     "ntk_trace": ["ntk_trace", "ntk_trace_per_param"],
     "activation_entropy": [
-        "activation_entropy", "activation_mean", "activation_std", "activation_sparsity",
+        "activation_entropy",
+        "activation_mean",
+        "activation_std",
+        "activation_sparsity",
     ],
     "mutual_information": ["mutual_information", "mi_max", "mi_std"],
     "jacobian_rank": [
-        "jacobian_rank", "jacobian_rank_ratio", "jacobian_condition", "jacobian_max_sv",
+        "jacobian_rank",
+        "jacobian_rank_ratio",
+        "jacobian_condition",
+        "jacobian_max_sv",
     ],
     "block_influence": ["block_influence", "block_similarity"],
     "droplayer_robustness": ["droplayer_loss_increase", "droplayer_loss_ratio"],
     "laplace_posterior": ["laplace_posterior", "laplace_posterior_std"],
     "attention_flow": [
-        "attention_entropy", "attention_max_weight", "head_diversity", "attention_distance",
+        "attention_entropy",
+        "attention_max_weight",
+        "head_diversity",
+        "attention_distance",
     ],
 }
 

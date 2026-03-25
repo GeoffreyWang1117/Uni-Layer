@@ -12,9 +12,9 @@ Each integration converts Uni-Layer's contribution analysis into the format
 expected by the target library, enabling metrics-driven optimization.
 """
 
-from uni_layer.integrations.torch_pruning import TorchPruningBridge
-from uni_layer.integrations.huggingface_peft import HuggingFacePEFTBridge
 from uni_layer.integrations.distillation import DistillationBridge
+from uni_layer.integrations.huggingface_peft import HuggingFacePEFTBridge
+from uni_layer.integrations.torch_pruning import TorchPruningBridge
 
 __all__ = [
     "TorchPruningBridge",

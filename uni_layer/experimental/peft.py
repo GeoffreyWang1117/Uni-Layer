@@ -5,16 +5,18 @@ Provides optimal adapter/LoRA placement and rank selection based on layer
 importance analysis.
 """
 
-from typing import Dict, List, Optional, Tuple
+import math
 from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple
+
 import torch
 import torch.nn as nn
-import math
 
 
 @dataclass
 class AdapterConfig:
     """Configuration for PEFT methods"""
+
     method: str = "lora"  # lora, adapter, prefix_tuning
     rank: int = 8  # Rank for low-rank adaptation
     alpha: float = 16.0  # Scaling factor for LoRA
@@ -62,7 +64,7 @@ class LoRALayer(nn.Module):
         out_features: int,
         rank: int = 8,
         alpha: float = 16.0,
-        dropout: float = 0.1
+        dropout: float = 0.1,
     ):
         super().__init__()
         self.rank = rank
@@ -130,7 +132,7 @@ class AdapterLayer(nn.Module):
         input_dim: int,
         bottleneck_dim: int = 64,
         dropout: float = 0.1,
-        activation: str = "gelu"
+        activation: str = "gelu",
     ):
         super().__init__()
 
@@ -217,7 +219,7 @@ class PEFTOptimizer:
         self,
         model: nn.Module,
         contributions: Dict[str, Dict[str, float]],
-        config: AdapterConfig = None
+        config: AdapterConfig = None,
     ):
         self.model = model
         self.contributions = contributions
@@ -225,10 +227,7 @@ class PEFTOptimizer:
         self.peft_layers = {}
 
     def select_layers(
-        self,
-        top_k: int = 10,
-        metric_name: str = "gradient_norm",
-        min_contribution: float = 0.1
+        self, top_k: int = 10, metric_name: str = "gradient_norm", min_contribution: float = 0.1
     ) -> List[str]:
         """
         Select which layers to augment with PEFT.
@@ -250,17 +249,11 @@ class PEFTOptimizer:
 
         # Filter by minimum contribution
         layer_scores = {
-            name: score
-            for name, score in layer_scores.items()
-            if score >= min_contribution
+            name: score for name, score in layer_scores.items() if score >= min_contribution
         }
 
         # Sort and select top-k
-        sorted_layers = sorted(
-            layer_scores.items(),
-            key=lambda x: x[1],
-            reverse=True
-        )
+        sorted_layers = sorted(layer_scores.items(), key=lambda x: x[1], reverse=True)
 
         selected = [name for name, _ in sorted_layers[:top_k]]
 
@@ -271,7 +264,7 @@ class PEFTOptimizer:
         selected_layers: List[str],
         base_rank: int = 8,
         max_rank: int = 64,
-        metric_name: str = "gradient_norm"
+        metric_name: str = "gradient_norm",
     ) -> Dict[str, int]:
         """
         Compute adaptive rank for each layer based on contribution.
@@ -320,9 +313,7 @@ class PEFTOptimizer:
         return ranks
 
     def inject_lora(
-        self,
-        selected_layers: Optional[List[str]] = None,
-        ranks: Optional[Dict[str, int]] = None
+        self, selected_layers: Optional[List[str]] = None, ranks: Optional[Dict[str, int]] = None
     ) -> nn.Module:
         """
         Inject LoRA layers into the model.
@@ -352,7 +343,7 @@ class PEFTOptimizer:
                     out_features=module.out_features,
                     rank=rank,
                     alpha=self.config.alpha,
-                    dropout=self.config.dropout
+                    dropout=self.config.dropout,
                 )
 
                 # Freeze original weights
@@ -378,9 +369,7 @@ class PEFTOptimizer:
         return self.model
 
     def inject_adapters(
-        self,
-        selected_layers: Optional[List[str]] = None,
-        bottleneck_dim: int = 64
+        self, selected_layers: Optional[List[str]] = None, bottleneck_dim: int = 64
     ) -> nn.Module:
         """
         Inject adapter layers into the model.
@@ -407,9 +396,7 @@ class PEFTOptimizer:
 
                 # Create adapter
                 adapter = AdapterLayer(
-                    input_dim=input_dim,
-                    bottleneck_dim=bottleneck_dim,
-                    dropout=self.config.dropout
+                    input_dim=input_dim, bottleneck_dim=bottleneck_dim, dropout=self.config.dropout
                 )
 
                 # Store adapter
@@ -454,12 +441,12 @@ class PEFTOptimizer:
         efficiency = trainable_params / total_params if total_params > 0 else 0.0
 
         return {
-            'total_params': total_params,
-            'trainable_params': trainable_params,
-            'frozen_params': total_params - trainable_params,
-            'efficiency': efficiency,
-            'reduction_ratio': 1.0 / efficiency if efficiency > 0 else float('inf'),
-            'num_peft_layers': len(self.peft_layers)
+            "total_params": total_params,
+            "trainable_params": trainable_params,
+            "frozen_params": total_params - trainable_params,
+            "efficiency": efficiency,
+            "reduction_ratio": 1.0 / efficiency if efficiency > 0 else float("inf"),
+            "num_peft_layers": len(self.peft_layers),
         }
 
     def get_peft_info(self) -> Dict:
@@ -477,10 +464,10 @@ class PEFTOptimizer:
                 ranks[name] = layer.down_project.out_features
 
         return {
-            'method': self.config.method,
-            'num_layers': len(self.peft_layers),
-            'layer_names': list(self.peft_layers.keys()),
-            'ranks': ranks,
-            'avg_rank': sum(ranks.values()) / len(ranks) if ranks else 0,
-            'parameter_efficiency': self.get_parameter_efficiency()
+            "method": self.config.method,
+            "num_layers": len(self.peft_layers),
+            "layer_names": list(self.peft_layers.keys()),
+            "ranks": ranks,
+            "avg_rank": sum(ranks.values()) / len(ranks) if ranks else 0,
+            "parameter_efficiency": self.get_parameter_efficiency(),
         }

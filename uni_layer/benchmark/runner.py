@@ -6,9 +6,10 @@ This module provides tools for systematic benchmarking across models.
 
 import json
 import pickle
-from pathlib import Path
-from typing import Dict, List, Optional, Any
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
@@ -170,8 +171,7 @@ class BenchmarkRunner:
                     json_results[model_name] = {}
                     for layer_name, metrics in model_results.items():
                         json_results[model_name][layer_name] = {
-                            k: (float(v) if v is not None else None)
-                            for k, v in metrics.items()
+                            k: (float(v) if v is not None else None) for k, v in metrics.items()
                         }
 
                 json.dump(json_results, f, indent=2)
@@ -261,16 +261,16 @@ class BenchmarkRunner:
             Report string
         """
         lines = []
-        lines.append("="*60)
+        lines.append("=" * 60)
         lines.append(f"Benchmark Report: {self.run_name}")
-        lines.append("="*60)
+        lines.append("=" * 60)
         lines.append(f"\nTimestamp: {self.metadata['timestamp']}")
         lines.append(f"Models: {len(self.metadata['models'])}")
         lines.append(f"Metrics: {len(self.metadata['metrics'])}")
 
-        lines.append("\n" + "="*60)
+        lines.append("\n" + "=" * 60)
         lines.append("Model Summary")
-        lines.append("="*60)
+        lines.append("=" * 60)
 
         for model_name, model_meta in self.metadata["models"].items():
             lines.append(f"\n{model_name}:")
@@ -278,18 +278,16 @@ class BenchmarkRunner:
             lines.append(f"  Parameters: {model_meta['num_parameters']:,}")
             lines.append(f"  Layers analyzed: {len(self.results.get(model_name, {}))}")
 
-        lines.append("\n" + "="*60)
+        lines.append("\n" + "=" * 60)
         lines.append("Metric Comparison")
-        lines.append("="*60)
+        lines.append("=" * 60)
 
         for metric_name in self.metadata["metrics"]:
             lines.append(f"\n{metric_name}:")
             comparison = self.compare_models(metric_name)
 
             for model_name, avg_value in sorted(
-                comparison.items(),
-                key=lambda x: x[1],
-                reverse=True
+                comparison.items(), key=lambda x: x[1], reverse=True
             ):
                 lines.append(f"  {model_name}: {avg_value:.4f}")
 

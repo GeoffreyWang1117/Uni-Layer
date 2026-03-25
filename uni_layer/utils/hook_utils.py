@@ -2,9 +2,10 @@
 Utilities for registering hooks to extract activations and gradients.
 """
 
+from typing import Any, Callable, Dict, List
+
 import torch
 import torch.nn as nn
-from typing import Dict, List, Callable, Any
 
 
 class ActivationHook:
@@ -35,9 +36,7 @@ class GradientHook:
 
 
 def register_hooks(
-    model: nn.Module,
-    layers: Dict[str, nn.Module],
-    hook_type: str = "forward"
+    model: nn.Module, layers: Dict[str, nn.Module], hook_type: str = "forward"
 ) -> Dict[str, Any]:
     """
     Register hooks on specified layers.

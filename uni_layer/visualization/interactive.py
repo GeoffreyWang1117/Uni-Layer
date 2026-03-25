@@ -7,11 +7,12 @@ This module provides enhanced visualizations including:
 - Cross-model comparisons
 """
 
+from typing import Any, Dict, List, Optional
+
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from typing import Dict, List, Optional, Any
 import pandas as pd
+import seaborn as sns
 
 
 def plot_layer_network(
@@ -57,8 +58,8 @@ def plot_layer_network(
     # Add edges between consecutive layers with high similarity
     for i in range(n_layers - 1):
         # Simplified: connect if both have high values
-        if values[i] > threshold and values[i+1] > threshold:
-            G.add_edge(i, i+1)
+        if values[i] > threshold and values[i + 1] > threshold:
+            G.add_edge(i, i + 1)
 
     # Plot
     plt.figure(figsize=figsize)
@@ -69,11 +70,7 @@ def plot_layer_network(
     # Draw nodes
     node_colors = [values[i] for i in G.nodes()]
     nx.draw_networkx_nodes(
-        G, pos,
-        node_color=node_colors,
-        node_size=500,
-        cmap=plt.cm.viridis,
-        alpha=0.9
+        G, pos, node_color=node_colors, node_size=500, cmap=plt.cm.viridis, alpha=0.9
     )
 
     # Draw edges
@@ -85,11 +82,11 @@ def plot_layer_network(
 
     plt.title(f"Layer Similarity Network ({metric_name})", fontsize=14)
     plt.colorbar(plt.cm.ScalarMappable(cmap=plt.cm.viridis), label=metric_name)
-    plt.axis('off')
+    plt.axis("off")
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved network plot to {save_path}")
 
     plt.show()
@@ -121,7 +118,7 @@ def plot_metric_evolution(
 
     if layer_names is None:
         # Select a subset for clarity
-        layer_names = all_layers[::max(1, len(all_layers)//10)]  # Every 10th layer
+        layer_names = all_layers[:: max(1, len(all_layers) // 10)]  # Every 10th layer
 
     # Extract time series
     time_steps = list(range(len(history)))
@@ -136,17 +133,17 @@ def plot_metric_evolution(
     plt.figure(figsize=figsize)
 
     for layer in layer_names:
-        plt.plot(time_steps, data[layer], marker='o', label=layer, alpha=0.7)
+        plt.plot(time_steps, data[layer], marker="o", label=layer, alpha=0.7)
 
     plt.xlabel("Time Step", fontsize=12)
     plt.ylabel(metric_name.replace("_", " ").title(), fontsize=12)
     plt.title(f"Metric Evolution: {metric_name}", fontsize=14)
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', fontsize=9)
+    plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left", fontsize=9)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved evolution plot to {save_path}")
 
     plt.show()
@@ -174,11 +171,7 @@ def plot_cross_model_comparison(
         for layer_idx, (layer_name, metrics) in enumerate(contributions.items()):
             value = metrics.get(metric_name)
             if value is not None:
-                data.append({
-                    'Model': model_name,
-                    'Layer Index': layer_idx,
-                    'Value': value
-                })
+                data.append({"Model": model_name, "Layer Index": layer_idx, "Value": value})
 
     if not data:
         print("No data to plot")
@@ -190,15 +183,15 @@ def plot_cross_model_comparison(
     plt.figure(figsize=figsize)
 
     # Line plot for each model
-    for model_name in df['Model'].unique():
-        model_data = df[df['Model'] == model_name]
+    for model_name in df["Model"].unique():
+        model_data = df[df["Model"] == model_name]
         plt.plot(
-            model_data['Layer Index'],
-            model_data['Value'],
-            marker='o',
+            model_data["Layer Index"],
+            model_data["Value"],
+            marker="o",
             label=model_name,
             linewidth=2,
-            markersize=6
+            markersize=6,
         )
 
     plt.xlabel("Layer Index", fontsize=12)
@@ -209,7 +202,7 @@ def plot_cross_model_comparison(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved comparison plot to {save_path}")
 
     plt.show()
@@ -264,22 +257,22 @@ def plot_radar_chart(
     angles += angles[:1]
 
     # Plot
-    fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection='polar'))
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection="polar"))
 
-    ax.plot(angles, values_normalized, 'o-', linewidth=2, label=layer_name)
+    ax.plot(angles, values_normalized, "o-", linewidth=2, label=layer_name)
     ax.fill(angles, values_normalized, alpha=0.25)
 
     ax.set_xticks(angles[:-1])
     ax.set_xticklabels(labels, size=10)
     ax.set_ylim(0, 1)
     ax.set_title(f"Layer Profile: {layer_name}", size=14, pad=20)
-    ax.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1))
+    ax.legend(loc="upper right", bbox_to_anchor=(1.3, 1.1))
     ax.grid(True)
 
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved radar chart to {save_path}")
 
     plt.show()

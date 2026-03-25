@@ -2,11 +2,12 @@
 Visualization utilities for layer contribution analysis.
 """
 
+from typing import Any, Dict, List, Optional
+
 import matplotlib.pyplot as plt
-import seaborn as sns
 import numpy as np
-from typing import Dict, List, Optional, Any
 import pandas as pd
+import seaborn as sns
 
 
 def plot_layer_contributions(
@@ -41,7 +42,7 @@ def plot_layer_contributions(
 
     # Create plot
     plt.figure(figsize=figsize)
-    bars = plt.bar(range(len(values)), values, alpha=0.7, edgecolor='black')
+    bars = plt.bar(range(len(values)), values, alpha=0.7, edgecolor="black")
 
     # Color bars by magnitude
     colors = plt.cm.viridis(np.linspace(0, 1, len(values)))
@@ -52,11 +53,11 @@ def plot_layer_contributions(
     plt.ylabel(metric_name.replace("_", " ").title(), fontsize=12)
     plt.title(title or f"Layer Contributions: {metric_name.replace('_', ' ').title()}", fontsize=14)
     plt.xticks(range(len(layer_names)), range(len(layer_names)), rotation=45)
-    plt.grid(axis='y', alpha=0.3)
+    plt.grid(axis="y", alpha=0.3)
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved plot to {save_path}")
 
     plt.show()
@@ -86,7 +87,10 @@ def plot_contribution_heatmap(
     for metric in metrics:
         row = []
         for layer_name in layer_names:
-            if metric in contributions[layer_name] and contributions[layer_name][metric] is not None:
+            if (
+                metric in contributions[layer_name]
+                and contributions[layer_name][metric] is not None
+            ):
                 row.append(contributions[layer_name][metric])
             else:
                 row.append(np.nan)
@@ -105,9 +109,9 @@ def plot_contribution_heatmap(
         cmap=cmap,
         annot=False,
         fmt=".2f",
-        cbar_kws={'label': 'Normalized Contribution'},
+        cbar_kws={"label": "Normalized Contribution"},
         linewidths=0.5,
-        linecolor='gray'
+        linecolor="gray",
     )
 
     plt.xlabel("Layer Index", fontsize=12)
@@ -116,7 +120,7 @@ def plot_contribution_heatmap(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved heatmap to {save_path}")
 
     plt.show()
@@ -161,7 +165,7 @@ def plot_depth_analysis(
 
     # Create plot
     plt.figure(figsize=figsize)
-    plt.plot(range(len(bin_values)), bin_values, marker='o', linewidth=2, markersize=8)
+    plt.plot(range(len(bin_values)), bin_values, marker="o", linewidth=2, markersize=8)
     plt.fill_between(range(len(bin_values)), bin_values, alpha=0.3)
 
     plt.xlabel("Depth Group", fontsize=12)
@@ -172,7 +176,7 @@ def plot_depth_analysis(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved depth analysis to {save_path}")
 
     plt.show()
@@ -212,7 +216,7 @@ def plot_metric_comparison(
 
     # Create scatter plot
     plt.figure(figsize=figsize)
-    plt.scatter(x_values, y_values, s=100, alpha=0.6, c=range(len(x_values)), cmap='viridis')
+    plt.scatter(x_values, y_values, s=100, alpha=0.6, c=range(len(x_values)), cmap="viridis")
 
     # Add labels
     for i, label in enumerate(labels):
@@ -222,7 +226,13 @@ def plot_metric_comparison(
     if len(x_values) > 1:
         z = np.polyfit(x_values, y_values, 1)
         p = np.poly1d(z)
-        plt.plot(x_values, p(x_values), "r--", alpha=0.5, label=f"Correlation: {np.corrcoef(x_values, y_values)[0,1]:.3f}")
+        plt.plot(
+            x_values,
+            p(x_values),
+            "r--",
+            alpha=0.5,
+            label=f"Correlation: {np.corrcoef(x_values, y_values)[0,1]:.3f}",
+        )
         plt.legend()
 
     plt.xlabel(metric1.replace("_", " ").title(), fontsize=12)
@@ -232,7 +242,7 @@ def plot_metric_comparison(
     plt.tight_layout()
 
     if save_path:
-        plt.savefig(save_path, dpi=300, bbox_inches='tight')
+        plt.savefig(save_path, dpi=300, bbox_inches="tight")
         print(f"✓ Saved comparison plot to {save_path}")
 
     plt.show()

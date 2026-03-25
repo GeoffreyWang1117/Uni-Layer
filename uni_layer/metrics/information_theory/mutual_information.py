@@ -2,10 +2,11 @@
 Mutual Information metric for layer contribution.
 """
 
+from typing import Any, Dict, Optional
+
+import numpy as np
 import torch
 import torch.nn as nn
-from typing import Dict, Any, Optional
-import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import model_forward
@@ -30,14 +31,14 @@ class MutualInformation(LayerMetric):
         num_batches: int = 10,
         task_type: str = "classification",
         n_neighbors: int = 3,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(
             name="mutual_information",
             category="information_theory",
             requires_gradient=False,
             requires_data=True,
-            **kwargs
+            **kwargs,
         )
         self.num_batches = num_batches
         self.task_type = task_type
@@ -51,7 +52,7 @@ class MutualInformation(LayerMetric):
         layer_idx: int,
         data_loader: Optional[Any] = None,
         device: str = "cuda",
-        **kwargs
+        **kwargs,
     ) -> Dict[str, float]:
         """
         Compute mutual information for the layer.
@@ -111,6 +112,7 @@ class MutualInformation(LayerMetric):
         # Compute MI (lazy import — sklearn only needed when this metric runs)
         try:
             from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
+
             if self.task_type == "classification":
                 mi = mutual_info_classif(X, y, n_neighbors=self.n_neighbors, random_state=42)
             else:

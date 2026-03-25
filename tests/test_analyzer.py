@@ -8,18 +8,14 @@ import torch.nn as nn
 from torch.utils.data import DataLoader, TensorDataset
 
 from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, CKA
+from uni_layer.metrics import CKA, GradientNorm
 
 
 @pytest.fixture
 def simple_model():
     """Create a simple model"""
     return nn.Sequential(
-        nn.Linear(10, 20),
-        nn.ReLU(),
-        nn.Linear(20, 10),
-        nn.ReLU(),
-        nn.Linear(10, 5)
+        nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 10), nn.ReLU(), nn.Linear(10, 5)
     )
 
 
@@ -36,11 +32,7 @@ class TestLayerAnalyzer:
     """Test LayerAnalyzer class"""
 
     def test_initialization(self, simple_model):
-        analyzer = LayerAnalyzer(
-            model=simple_model,
-            task_type="classification",
-            device="cpu"
-        )
+        analyzer = LayerAnalyzer(model=simple_model, task_type="classification", device="cpu")
 
         assert analyzer.model == simple_model
         assert analyzer.task_type == "classification"
@@ -51,9 +43,7 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         assert len(contributions) > 0
@@ -63,9 +53,7 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         rankings = analyzer.rank_layers(contributions, "gradient_norm")
@@ -81,16 +69,10 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
-        top_layers = analyzer.get_top_k_layers(
-            contributions,
-            metric_name="gradient_norm",
-            k=2
-        )
+        top_layers = analyzer.get_top_k_layers(contributions, metric_name="gradient_norm", k=2)
 
         assert len(top_layers) == 2
         assert all(isinstance(layer, str) for layer in top_layers)
@@ -99,15 +81,11 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         strategy = analyzer.get_pruning_strategy(
-            contributions,
-            metric_name="gradient_norm",
-            prune_ratio=0.3
+            contributions, metric_name="gradient_norm", prune_ratio=0.3
         )
 
         assert len(strategy) > 0
@@ -118,15 +96,11 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         distill_layers = analyzer.get_distillation_layers(
-            contributions,
-            metric_name="gradient_norm",
-            top_k=3
+            contributions, metric_name="gradient_norm", top_k=3
         )
 
         assert len(distill_layers) <= 3
@@ -136,15 +110,11 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         aggregated = analyzer.aggregate_by_depth(
-            contributions,
-            metric_name="gradient_norm",
-            num_bins=3
+            contributions, metric_name="gradient_norm", num_bins=3
         )
 
         assert len(aggregated) == 3
@@ -154,9 +124,7 @@ class TestLayerAnalyzer:
         analyzer = LayerAnalyzer(simple_model, device="cpu")
 
         contributions = analyzer.compute_metrics(
-            metrics=[GradientNorm(num_batches=2)],
-            data_loader=sample_data,
-            verbose=False
+            metrics=[GradientNorm(num_batches=2)], data_loader=sample_data, verbose=False
         )
 
         stats = analyzer.get_summary_statistics(contributions, "gradient_norm")

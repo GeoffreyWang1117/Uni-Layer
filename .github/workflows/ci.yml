@@ -18,7 +18,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install lint dependencies
-        run: pip install flake8 isort black
+        run: pip install flake8 isort 'black>=24.0'
 
       - name: Check formatting with black
         run: black --check --line-length 100 uni_layer/ tests/

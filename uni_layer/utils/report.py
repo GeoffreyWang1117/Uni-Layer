@@ -4,10 +4,10 @@ Automatic report generation for layer contribution analysis.
 This module creates comprehensive HTML and PDF reports.
 """
 
-from typing import Dict, List, Optional, Any
-from pathlib import Path
-from datetime import datetime
 import json
+from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 
 class ReportGenerator:
@@ -115,9 +115,7 @@ class ReportGenerator:
         metric_avgs = {}
         for metric in self.metrics:
             values = [
-                m.get(metric, 0)
-                for m in self.contributions.values()
-                if m.get(metric) is not None
+                m.get(metric, 0) for m in self.contributions.values() if m.get(metric) is not None
             ]
             if values:
                 metric_avgs[metric] = sum(values) / len(values)

@@ -2,9 +2,10 @@
 Tests for the uni-layer CLI.
 """
 
+import json
 import subprocess
 import sys
-import json
+
 import pytest
 
 
@@ -12,7 +13,9 @@ def run_cli(*args):
     """Run CLI command and return (returncode, stdout, stderr)."""
     result = subprocess.run(
         [sys.executable, "-m", "uni_layer.cli", *args],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True,
+        text=True,
+        timeout=30,
     )
     return result.returncode, result.stdout, result.stderr
 

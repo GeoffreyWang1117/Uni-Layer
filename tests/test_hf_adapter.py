@@ -2,21 +2,23 @@
 Tests for HuggingFace model adaptation and Block Influence metric.
 """
 
+from dataclasses import dataclass
+from typing import Optional
+
 import pytest
 import torch
 import torch.nn as nn
-from dataclasses import dataclass
-from typing import Optional
 from torch.utils.data import DataLoader, TensorDataset
 
-from uni_layer.utils.model_adapter import extract_logits, compute_loss, model_forward
-
+from uni_layer.utils.model_adapter import compute_loss, extract_logits, model_forward
 
 # ---------- Mock HuggingFace output types ----------
+
 
 @dataclass
 class MockModelOutput:
     """Simulates HuggingFace BaseModelOutputWithPooling."""
+
     logits: Optional[torch.Tensor] = None
     last_hidden_state: Optional[torch.Tensor] = None
     loss: Optional[torch.Tensor] = None
@@ -56,6 +58,7 @@ class HFStyleModelNoLogits(nn.Module):
 
 # ---------- Tests for extract_logits ----------
 
+
 class TestExtractLogits:
     def test_tensor_passthrough(self):
         t = torch.randn(4, 5)
@@ -88,6 +91,7 @@ class TestExtractLogits:
 
 # ---------- Tests for compute_loss ----------
 
+
 class TestComputeLoss:
     def test_with_internal_loss(self):
         loss = torch.tensor(0.5)
@@ -109,6 +113,7 @@ class TestComputeLoss:
 
 
 # ---------- Tests for model_forward ----------
+
 
 class TestModelForward:
     def test_standard_model(self):
@@ -134,6 +139,7 @@ class TestModelForward:
 
 # ---------- Tests for metrics with HF-style models ----------
 
+
 class TestMetricsWithHFModel:
     @pytest.fixture
     def hf_model_and_data(self):
@@ -145,94 +151,126 @@ class TestMetricsWithHFModel:
 
     def test_gradient_norm_hf(self, hf_model_and_data):
         from uni_layer.metrics import GradientNorm
+
         model, loader = hf_model_and_data
         m = GradientNorm(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert result["gradient_norm"] >= 0
 
     def test_cka_hf(self, hf_model_and_data):
         from uni_layer.metrics import CKA
+
         model, loader = hf_model_and_data
         m = CKA(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
         )
         assert "cka_score" in result
 
     def test_effective_rank_hf(self, hf_model_and_data):
         from uni_layer.metrics import EffectiveRank
+
         model, loader = hf_model_and_data
         m = EffectiveRank(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
         )
         assert "effective_rank" in result
 
     def test_fisher_information_hf(self, hf_model_and_data):
         from uni_layer.metrics import FisherInformation
+
         model, loader = hf_model_and_data
         m = FisherInformation(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert result["fisher_information"] >= 0
 
     def test_droplayer_hf(self, hf_model_and_data):
         from uni_layer.metrics import DropLayerRobustness
+
         model, loader = hf_model_and_data
         DropLayerRobustness.clear_baseline_cache()
         m = DropLayerRobustness(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert "droplayer_loss_increase" in result
 
     def test_activation_entropy_hf(self, hf_model_and_data):
         from uni_layer.metrics import ActivationEntropy
+
         model, loader = hf_model_and_data
         m = ActivationEntropy(num_batches=2)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
         )
         assert result["activation_entropy"] >= 0
 
     def test_hessian_trace_hf(self, hf_model_and_data):
         from uni_layer.metrics import HessianTrace
+
         model, loader = hf_model_and_data
         m = HessianTrace(num_samples=2, num_batches=1)
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert "hessian_trace" in result
 
     def test_laplace_posterior_hf(self, hf_model_and_data):
         from uni_layer.metrics import LaplacePosterior
+
         model, loader = hf_model_and_data
         m = LaplacePosterior(num_batches=2, mode="fisher")
         result = m.compute(
-            model=model, layer=model.layer1,
-            layer_name="layer1", layer_idx=0,
-            data_loader=loader, device="cpu",
+            model=model,
+            layer=model.layer1,
+            layer_name="layer1",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
             criterion=nn.CrossEntropyLoss(),
         )
         assert result["laplace_posterior"] >= 0
@@ -240,10 +278,12 @@ class TestMetricsWithHFModel:
 
 # ---------- Tests for Block Influence metric ----------
 
+
 class TestBlockInfluence:
     @pytest.fixture
     def residual_model(self):
         """Model with residual connection — BI should be low."""
+
         class ResBlock(nn.Module):
             def __init__(self):
                 super().__init__()
@@ -275,6 +315,7 @@ class TestBlockInfluence:
 
     def test_initialization(self):
         from uni_layer.metrics import BlockInfluence
+
         m = BlockInfluence()
         assert m.name == "block_influence"
         assert m.category == "representation"
@@ -282,12 +323,16 @@ class TestBlockInfluence:
 
     def test_compute(self, sample_data):
         from uni_layer.metrics import BlockInfluence
+
         model = nn.Sequential(nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 5))
         m = BlockInfluence(num_batches=2)
         result = m.compute(
-            model=model, layer=model[0],
-            layer_name="0", layer_idx=0,
-            data_loader=sample_data, device="cpu",
+            model=model,
+            layer=model[0],
+            layer_name="0",
+            layer_idx=0,
+            data_loader=sample_data,
+            device="cpu",
         )
         assert "block_influence" in result
         assert "block_similarity" in result
@@ -297,11 +342,15 @@ class TestBlockInfluence:
     def test_residual_low_bi(self, residual_model, sample_data):
         """A near-identity residual block should have low BI (high similarity)."""
         from uni_layer.metrics import BlockInfluence
+
         m = BlockInfluence(num_batches=2)
         result = m.compute(
-            model=residual_model, layer=residual_model.res,
-            layer_name="res", layer_idx=1,
-            data_loader=sample_data, device="cpu",
+            model=residual_model,
+            layer=residual_model.res,
+            layer_name="res",
+            layer_idx=1,
+            data_loader=sample_data,
+            device="cpu",
         )
         # With zero-initialized weights, output ≈ input
         assert result["block_influence"] < 0.1
@@ -310,33 +359,60 @@ class TestBlockInfluence:
     def test_transforming_layer_high_bi(self, sample_data):
         """A layer that significantly transforms input should have high BI."""
         from uni_layer.metrics import BlockInfluence
+
         model = nn.Sequential(nn.Linear(10, 20), nn.ReLU(), nn.Linear(20, 5))
         m = BlockInfluence(num_batches=2)
         # ReLU changes the representation significantly
         result = m.compute(
-            model=model, layer=model[1],  # ReLU
-            layer_name="1", layer_idx=1,
-            data_loader=sample_data, device="cpu",
+            model=model,
+            layer=model[1],  # ReLU
+            layer_name="1",
+            layer_idx=1,
+            data_loader=sample_data,
+            device="cpu",
         )
         assert result["block_influence"] > 0.0
 
     def test_importable(self):
         from uni_layer.metrics import BlockInfluence
+
         assert BlockInfluence is not None
 
     def test_all_13_metrics_importable(self):
         """Verify all 13 metrics (12 + BlockInfluence) can be imported."""
         from uni_layer.metrics import (
-            GradientNorm, HessianTrace, FisherInformation,
-            CKA, EffectiveRank, NTKTrace,
-            MutualInformation, ActivationEntropy,
-            JacobianRank, BlockInfluence,
-            DropLayerRobustness, LaplacePosterior, AttentionFlow,
+            CKA,
+            ActivationEntropy,
+            AttentionFlow,
+            BlockInfluence,
+            DropLayerRobustness,
+            EffectiveRank,
+            FisherInformation,
+            GradientNorm,
+            HessianTrace,
+            JacobianRank,
+            LaplacePosterior,
+            MutualInformation,
+            NTKTrace,
         )
-        assert len([
-            GradientNorm, HessianTrace, FisherInformation,
-            CKA, EffectiveRank, NTKTrace,
-            MutualInformation, ActivationEntropy,
-            JacobianRank, BlockInfluence,
-            DropLayerRobustness, LaplacePosterior, AttentionFlow,
-        ]) == 13
+
+        assert (
+            len(
+                [
+                    GradientNorm,
+                    HessianTrace,
+                    FisherInformation,
+                    CKA,
+                    EffectiveRank,
+                    NTKTrace,
+                    MutualInformation,
+                    ActivationEntropy,
+                    JacobianRank,
+                    BlockInfluence,
+                    DropLayerRobustness,
+                    LaplacePosterior,
+                    AttentionFlow,
+                ]
+            )
+            == 13
+        )

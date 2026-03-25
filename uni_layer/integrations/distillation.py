@@ -31,8 +31,9 @@ Usage:
 """
 
 from typing import Dict, List, Optional, Tuple
-import torch.nn as nn
+
 import numpy as np
+import torch.nn as nn
 
 
 class DistillationBridge:
