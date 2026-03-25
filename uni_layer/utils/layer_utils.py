@@ -8,19 +8,71 @@ from collections import OrderedDict
 from typing import Dict, Tuple, Optional
 
 
+def _find_transformer_blocks(model: nn.Module) -> Optional[Tuple[str, nn.ModuleList]]:
+    """
+    Search for the main transformer block ModuleList in a model.
+
+    Handles arbitrary nesting (e.g. model.model.layers, model.gpt_neox.layers,
+    model.transformer.h, model.encoder.layer, model.blocks).
+
+    Returns:
+        (dotted_path, module_list) or None if not found
+    """
+    # Known attribute names for transformer block lists
+    block_attrs = ("layer", "layers", "h", "blocks", "block")
+
+    # BFS up to 3 levels deep
+    queue = [(name, child) for name, child in model.named_children()]
+    visited = set()
+
+    while queue:
+        path, module = queue.pop(0)
+        if id(module) in visited:
+            continue
+        visited.add(id(module))
+
+        # Check if this module itself is a ModuleList of transformer blocks
+        if isinstance(module, nn.ModuleList) and len(module) >= 2:
+            first = module[0]
+            # A transformer block has children (not a leaf like Linear)
+            if len(list(first.children())) >= 2:
+                return (path, module)
+
+        # Check known attribute names on this module
+        for attr in block_attrs:
+            child = getattr(module, attr, None)
+            if child is not None and isinstance(child, nn.ModuleList) and len(child) >= 2:
+                first = child[0]
+                if len(list(first.children())) >= 2:
+                    return (f"{path}.{attr}", child)
+
+        # Go deeper (but not too deep)
+        if path.count(".") < 2:
+            for name, child in module.named_children():
+                if id(child) not in visited:
+                    queue.append((f"{path}.{name}", child))
+
+    return None
+
+
 def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> OrderedDict:
     """
     Extract all relevant layers from a model.
 
-    This function intelligently extracts layers from different architectures:
-    - Transformers: Attention blocks, FFN blocks, LayerNorms
-    - CNNs: Conv layers, Pooling layers, BatchNorms
-    - GNNs: Graph convolution layers
-    - RecSys: Embedding layers, MLP layers
+    For transformer models, extracts at **block level** (not individual Linear/LN).
+    This works for any nesting depth:
+    - model.encoder.layer        (BERT)
+    - model.transformer.h        (GPT-2)
+    - model.layers               (LLaMA base)
+    - model.model.layers         (LLaMA CausalLM wrapper)
+    - model.gpt_neox.layers      (Pythia/GPT-NeoX)
+    - model.blocks               (ViT/Swin)
+
+    For non-transformer models, falls back to type-based extraction.
 
     Args:
         model: PyTorch model
-        include_types: List of layer types to include (default: all major types)
+        include_types: List of layer types to include (for fallback only)
 
     Returns:
         OrderedDict of {layer_name: layer_module}
@@ -44,42 +96,26 @@ def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> 
 
     layers = OrderedDict()
 
-    # Try to extract layers based on common architectures
-    if hasattr(model, "encoder") and hasattr(model.encoder, "layer"):
-        # BERT-style architecture
-        for i, layer in enumerate(model.encoder.layer):
-            layers[f"encoder.layer.{i}"] = layer
+    # First: try to find transformer blocks automatically
+    found = _find_transformer_blocks(model)
+    if found is not None:
+        path, module_list = found
+        for i, block in enumerate(module_list):
+            layers[f"{path}.{i}"] = block
+        return layers
 
-    elif hasattr(model, "transformer") and hasattr(model.transformer, "h"):
-        # GPT-style architecture
-        for i, layer in enumerate(model.transformer.h):
-            layers[f"transformer.h.{i}"] = layer
+    # Fallback: generic type-based extraction
+    for name, module in model.named_modules():
+        if any(isinstance(module, layer_type) for layer_type in include_types):
+            # Skip if it's a submodule of another included layer
+            parent_included = False
+            for existing_name in layers.keys():
+                if name.startswith(existing_name + "."):
+                    parent_included = True
+                    break
 
-    elif hasattr(model, "layers"):
-        # Llama/Mistral-style architecture
-        if isinstance(model.layers, nn.ModuleList):
-            for i, layer in enumerate(model.layers):
-                layers[f"layers.{i}"] = layer
-
-    elif hasattr(model, "blocks"):
-        # ViT/Swin-style architecture
-        if isinstance(model.blocks, nn.ModuleList):
-            for i, block in enumerate(model.blocks):
-                layers[f"blocks.{i}"] = block
-
-    else:
-        # Generic extraction: get all named modules of specified types
-        for name, module in model.named_modules():
-            if any(isinstance(module, layer_type) for layer_type in include_types):
-                # Skip if it's a submodule of another included layer
-                parent_included = False
-                for existing_name in layers.keys():
-                    if name.startswith(existing_name + "."):
-                        parent_included = True
-                        break
-
-                if not parent_included:
-                    layers[name] = module
+            if not parent_included:
+                layers[name] = module
 
     # If still empty, just get all modules with parameters
     if len(layers) == 0:
