@@ -9,12 +9,13 @@ HuggingFace PEFT, and knowledge distillation frameworks by providing the analyti
 foundation ("which layers matter and why?") that drives better optimization decisions.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 __author__ = "Uni-Layer Team"
 
 # Core framework
 from uni_layer.core.analyzer import LayerAnalyzer
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.core.profile import LayerProfile
 
 # Metrics
 from uni_layer.metrics import *
@@ -29,6 +30,7 @@ __all__ = [
     # Core
     "LayerAnalyzer",
     "LayerMetric",
+    "LayerProfile",
     # Benchmark
     "BenchmarkRunner",
     # Utilities

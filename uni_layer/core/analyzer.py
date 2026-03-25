@@ -77,14 +77,36 @@ class LayerAnalyzer:
         print(f"  Device: {self.device}")
         print(f"  Task Type: {task_type}")
 
+    # Preset metric configurations
+    PRESETS = {
+        "llm_fast": [
+            "BlockInfluence", "EffectiveRank", "CKA",
+            "ActivationEntropy", "AttentionFlow",
+        ],
+        "llm_full": [
+            "BlockInfluence", "EffectiveRank", "CKA",
+            "ActivationEntropy", "AttentionFlow",
+            "GradientNorm", "FisherInformation",
+        ],
+        "full": [
+            "GradientNorm", "HessianTrace", "FisherInformation",
+            "CKA", "EffectiveRank", "NTKTrace",
+            "ActivationEntropy", "MutualInformation",
+            "JacobianRank", "BlockInfluence",
+            "DropLayerRobustness", "LaplacePosterior", "AttentionFlow",
+        ],
+        "quick": ["GradientNorm", "BlockInfluence", "EffectiveRank"],
+    }
+
     def compute_metrics(
         self,
-        metrics: List[LayerMetric],
+        metrics: Optional[List[LayerMetric]] = None,
         data_loader: Optional[Any] = None,
         layer_names: Optional[List[str]] = None,
         verbose: bool = True,
         use_cache: bool = True,
         num_batches: int = 10,
+        preset: Optional[str] = None,
         **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
@@ -95,18 +117,25 @@ class LayerAnalyzer:
         the number of forward/backward passes.
 
         Args:
-            metrics: List of LayerMetric instances to compute
+            metrics: List of LayerMetric instances to compute.
+                     Ignored if preset is specified.
             data_loader: DataLoader for data-dependent metrics
             layer_names: Specific layers to analyze (default: all layers)
             verbose: Whether to show progress bars
             use_cache: Whether to cache activations/gradients (default: True)
             num_batches: Number of batches for cache capture
+            preset: Use a named preset instead of manual metrics list.
+                    Options: "llm_fast", "llm_full", "full", "quick"
             **kwargs: Additional arguments passed to metrics
 
         Returns:
             Dictionary mapping layer names to metric values
             Format: {layer_name: {metric_name: value}}
         """
+        if preset is not None:
+            metrics = self._resolve_preset(preset, num_batches)
+        elif metrics is None:
+            raise ValueError("Either metrics or preset must be provided")
         if layer_names is None:
             layer_names = list(self.layers.keys())
 
@@ -458,6 +487,38 @@ class LayerAnalyzer:
             "q25": np.percentile(values, 25),
             "q75": np.percentile(values, 75),
         }
+
+    def _resolve_preset(self, preset: str, num_batches: int) -> List[LayerMetric]:
+        """Resolve a preset name to a list of metric instances."""
+        if preset not in self.PRESETS:
+            raise ValueError(
+                f"Unknown preset '{preset}'. Available: {list(self.PRESETS.keys())}"
+            )
+
+        import uni_layer.metrics as m
+
+        metric_map = {
+            "GradientNorm": m.GradientNorm,
+            "HessianTrace": m.HessianTrace,
+            "FisherInformation": m.FisherInformation,
+            "CKA": m.CKA,
+            "EffectiveRank": m.EffectiveRank,
+            "NTKTrace": m.NTKTrace,
+            "ActivationEntropy": m.ActivationEntropy,
+            "MutualInformation": m.MutualInformation,
+            "JacobianRank": m.JacobianRank,
+            "BlockInfluence": m.BlockInfluence,
+            "DropLayerRobustness": m.DropLayerRobustness,
+            "LaplacePosterior": m.LaplacePosterior,
+            "AttentionFlow": m.AttentionFlow,
+        }
+
+        instances = []
+        for name in self.PRESETS[preset]:
+            cls = metric_map.get(name)
+            if cls:
+                instances.append(cls(num_batches=num_batches))
+        return instances
 
     def __repr__(self) -> str:
         return (

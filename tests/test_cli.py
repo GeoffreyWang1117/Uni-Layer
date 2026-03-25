@@ -33,7 +33,7 @@ class TestCLIHelp:
     def test_version_flag(self):
         rc, out, _ = run_cli("--version")
         assert rc == 0
-        assert "uni-layer 0." in out
+        assert "uni-layer 0.3" in out
 
 
 class TestCLIInfo:
