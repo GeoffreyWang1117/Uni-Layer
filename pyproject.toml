@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "uni-layer"
-version = "0.2.0"
+version = "0.2.1"
 description = "A Universal Framework for Layer Contribution Analysis"
 readme = "README.md"
 requires-python = ">=3.8"
@@ -65,6 +65,9 @@ all = [
     "torch-pruning>=1.2.0",
     "peft>=0.6.0",
 ]
+
+[project.scripts]
+uni-layer = "uni_layer.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/GeoffreyWang1117/Uni-Layer"
