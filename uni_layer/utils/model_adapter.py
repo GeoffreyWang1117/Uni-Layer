@@ -128,6 +128,10 @@ def model_forward(
     if "labels" in forward_params and targets is not None:
         kwargs["labels"] = targets
 
+    # Seq2Seq models (T5, BART, etc.) require decoder_input_ids
+    if "decoder_input_ids" in forward_params and "decoder_input_ids" not in kwargs:
+        kwargs["decoder_input_ids"] = inputs[:, :1]  # Minimal decoder input
+
     if kwargs:
         return model(inputs, **kwargs)
     return model(inputs)

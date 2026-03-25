@@ -9,7 +9,7 @@ HuggingFace PEFT, and knowledge distillation frameworks by providing the analyti
 foundation ("which layers matter and why?") that drives better optimization decisions.
 """
 
-__version__ = "0.3.1"
+__version__ = "0.3.2"
 __author__ = "Uni-Layer Team"
 
 # Core framework

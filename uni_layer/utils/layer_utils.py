@@ -5,21 +5,27 @@ Utilities for extracting and identifying layers from different model architectur
 import torch
 import torch.nn as nn
 from collections import OrderedDict
-from typing import Dict, Tuple, Optional
+from typing import Dict, List, Tuple, Optional
 
 
-def _find_transformer_blocks(model: nn.Module) -> Optional[Tuple[str, nn.ModuleList]]:
+def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]]:
     """
-    Search for the main transformer block ModuleList in a model.
+    Search for ALL transformer block ModuleLists in a model.
 
-    Handles arbitrary nesting (e.g. model.model.layers, model.gpt_neox.layers,
-    model.transformer.h, model.encoder.layer, model.blocks).
+    Handles arbitrary nesting and Seq2Seq models with both encoder and decoder:
+    - model.encoder.layer / model.decoder.layer  (T5, BART)
+    - model.model.layers                         (LLaMA, Qwen)
+    - model.gpt_neox.layers                      (Pythia)
+    - model.transformer.h                        (GPT-2)
+    - model.encoder.layer                        (BERT)
+    - model.blocks                               (ViT)
 
     Returns:
-        (dotted_path, module_list) or None if not found
+        List of (dotted_path, module_list) tuples. Empty list if none found.
     """
-    # Known attribute names for transformer block lists
     block_attrs = ("layer", "layers", "h", "blocks", "block")
+    found = []
+    found_ids = set()
 
     # BFS up to 3 levels deep
     queue = [(name, child) for name, child in model.named_children()]
@@ -34,17 +40,19 @@ def _find_transformer_blocks(model: nn.Module) -> Optional[Tuple[str, nn.ModuleL
         # Check if this module itself is a ModuleList of transformer blocks
         if isinstance(module, nn.ModuleList) and len(module) >= 2:
             first = module[0]
-            # A transformer block has children (not a leaf like Linear)
-            if len(list(first.children())) >= 2:
-                return (path, module)
+            if len(list(first.children())) >= 2 and id(module) not in found_ids:
+                found.append((path, module))
+                found_ids.add(id(module))
+                continue  # Don't recurse into found block lists
 
         # Check known attribute names on this module
         for attr in block_attrs:
             child = getattr(module, attr, None)
             if child is not None and isinstance(child, nn.ModuleList) and len(child) >= 2:
                 first = child[0]
-                if len(list(first.children())) >= 2:
-                    return (f"{path}.{attr}", child)
+                if len(list(first.children())) >= 2 and id(child) not in found_ids:
+                    found.append((f"{path}.{attr}", child))
+                    found_ids.add(id(child))
 
         # Go deeper (but not too deep)
         if path.count(".") < 2:
@@ -52,7 +60,7 @@ def _find_transformer_blocks(model: nn.Module) -> Optional[Tuple[str, nn.ModuleL
                 if id(child) not in visited:
                     queue.append((f"{path}.{name}", child))
 
-    return None
+    return found
 
 
 def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> OrderedDict:
@@ -97,11 +105,11 @@ def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> 
     layers = OrderedDict()
 
     # First: try to find transformer blocks automatically
-    found = _find_transformer_blocks(model)
-    if found is not None:
-        path, module_list = found
-        for i, block in enumerate(module_list):
-            layers[f"{path}.{i}"] = block
+    found_blocks = _find_transformer_blocks(model)
+    if found_blocks:
+        for path, module_list in found_blocks:
+            for i, block in enumerate(module_list):
+                layers[f"{path}.{i}"] = block
         return layers
 
     # Fallback: generic type-based extraction
