@@ -6,7 +6,6 @@ import torch
 import torch.nn as nn
 from typing import Dict, Any, Optional
 import numpy as np
-from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.utils.model_adapter import model_forward
@@ -109,8 +108,9 @@ class MutualInformation(LayerMetric):
             X = X[indices]
             y = y[indices]
 
-        # Compute MI
+        # Compute MI (lazy import — sklearn only needed when this metric runs)
         try:
+            from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
             if self.task_type == "classification":
                 mi = mutual_info_classif(X, y, n_neighbors=self.n_neighbors, random_state=42)
             else:
