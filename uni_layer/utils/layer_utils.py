@@ -152,8 +152,11 @@ def identify_layer_type(layer: nn.Module) -> str:
     elif isinstance(layer, nn.MultiheadAttention):
         return "attention"
 
-    # Check for common layer types by attribute
-    if hasattr(layer, "self_attn") or hasattr(layer, "attn"):
+    # Check for common layer types by attribute / class name
+    if hasattr(layer, "self_attn") or hasattr(layer, "attn") or hasattr(layer, "attention"):
+        return "transformer_block"
+    class_lower = layer.__class__.__name__.lower()
+    if any(k in class_lower for k in ("layer", "block", "decoder")) and len(list(layer.children())) >= 2:
         return "transformer_block"
     elif isinstance(layer, (nn.Linear, nn.LazyLinear)):
         return "linear"

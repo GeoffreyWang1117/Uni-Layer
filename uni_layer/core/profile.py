@@ -365,6 +365,219 @@ class LayerProfile:
         }
 
     # ------------------------------------------------------------------
+    # Quick access
+    # ------------------------------------------------------------------
+
+    def top_layers(self, k: int = 5) -> List[Tuple[str, float]]:
+        """Return the k most important layers as (name, consensus_score) tuples."""
+        ranking = self.consensus_ranking
+        return [(r["layer"], r["consensus_score"]) for r in ranking[:k]]
+
+    def bottom_layers(self, k: int = 5) -> List[Tuple[str, float]]:
+        """Return the k least important layers as (name, consensus_score) tuples."""
+        ranking = self.consensus_ranking
+        return [(r["layer"], r["consensus_score"]) for r in ranking[-k:]]
+
+    # ------------------------------------------------------------------
+    # Display methods
+    # ------------------------------------------------------------------
+
+    def print_table(self, metrics: Optional[List[str]] = None, top_k: int = 0) -> str:
+        """
+        Format a compact per-layer metrics table.
+
+        Args:
+            metrics: Which metric keys to show (default: auto-select primary keys)
+            top_k: If > 0, only show top-k and bottom-k layers
+
+        Returns:
+            Formatted table string (also prints it)
+        """
+        from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+
+        # Auto-select: show only primary keys that exist in data
+        if metrics is None:
+            primary_set = set(METRIC_PRIMARY_KEYS.values())
+            metrics = [k for k in self._metric_keys if k in primary_set]
+            if not metrics:
+                metrics = self._metric_keys[:5]
+
+        # Header
+        name_w = max(25, max((len(l) for l in self._layers), default=25) + 2)
+        header = f"{'Layer':<{name_w}} {'Type':<16} {'Rank':>4}"
+        for m in metrics:
+            header += f" {m:>14}"
+        lines = [header, "-" * len(header)]
+
+        # Build ranking lookup
+        rank_map = {}
+        for entry in self.consensus_ranking:
+            rank_map[entry["layer"]] = entry["rank"]
+
+        # Rows
+        layer_indices = list(range(self._n_layers))
+        if top_k > 0 and self._n_layers > top_k * 2:
+            layer_indices = list(range(top_k)) + [-1] + list(range(self._n_layers - top_k, self._n_layers))
+
+        for idx in layer_indices:
+            if idx == -1:
+                lines.append(f"{'...':<{name_w}} {'':16} {'':>4}" + "".join(f" {'...':>14}" for _ in metrics))
+                continue
+            layer = self._layers[idx]
+            ltype = self.contributions[layer].get("layer_type", "?")[:15]
+            rank = rank_map.get(layer, "-")
+            row = f"{layer:<{name_w}} {ltype:<16} {str(rank):>4}"
+            for m in metrics:
+                val = self.contributions[layer].get(m)
+                if val is not None and isinstance(val, (int, float)):
+                    if abs(val) < 0.001 and val != 0:
+                        row += f" {val:>14.6f}"
+                    else:
+                        row += f" {val:>14.4f}"
+                else:
+                    row += f" {'N/A':>14}"
+            lines.append(row)
+
+        table = "\n".join(lines)
+        print(table)
+        return table
+
+    def print_report(self) -> str:
+        """
+        Print a complete human-readable analysis report.
+        Combines summary, table, trends, anomalies, and suggestions.
+
+        Returns:
+            Full report string (also prints it)
+        """
+        sections = []
+
+        # Title
+        title = f"Uni-Layer Analysis Report: {self.model_name}"
+        sections.append(f"\n{'=' * len(title)}")
+        sections.append(title)
+        sections.append(f"{'=' * len(title)}")
+
+        # Summary
+        sections.append(f"\n{self.summary()}")
+
+        # Table
+        sections.append(f"\n--- Layer Metrics ---\n")
+        table = self.print_table.__wrapped__(self) if hasattr(self.print_table, '__wrapped__') else self._format_table()
+
+        # Depth trends
+        trends = self.depth_trends
+        if trends:
+            sections.append("\n--- Depth Trends ---")
+            for metric, t in trends.items():
+                if t["trend"] != "flat":
+                    sections.append(
+                        f"  {metric:<25} {t['trend']:<12} "
+                        f"(early={t['early']:.4f}, mid={t['middle']:.4f}, late={t['late']:.4f})"
+                    )
+
+        # Anomalies
+        anomalies = self.anomalies
+        if anomalies:
+            sections.append("\n--- Anomalies ---")
+            for layer, items in anomalies.items():
+                for a in items:
+                    sections.append(
+                        f"  {layer:<25} {a['metric']:<20} "
+                        f"value={a['value']:.4f}  z={a['z_score']:+.1f}  ({a['note']})"
+                    )
+
+        # Clusters
+        clusters = self.layer_clusters
+        if clusters:
+            sections.append("\n--- Layer Groups ---")
+            for group, layers in clusters.items():
+                label = group.replace("_", " ").title()
+                sections.append(f"  {label}: {', '.join(layers)}")
+
+        # Suggestions
+        sections.append("\n--- Suggestions ---")
+        p = self.pruning_suggestion()
+        sections.append(f"  Pruning (30%): remove {p['num_layers_removed']} layers -> {p['estimated_speedup']} speedup")
+        if p["safe_to_remove"]:
+            sections.append(f"    Candidates: {', '.join(p['safe_to_remove'][:8])}")
+
+        l = self.lora_suggestion()
+        sections.append(f"  LoRA: {l['total_lora_layers']} target layers")
+        if l["adaptive_ranks"]:
+            top5 = list(l["adaptive_ranks"].items())[:5]
+            sections.append(f"    Top ranks: {', '.join(f'{n}={r}' for n,r in top5)}")
+
+        sections.append("")
+
+        report = "\n".join(sections)
+        # Now print table in the middle
+        full = report.replace("\n--- Layer Metrics ---\n", "\n--- Layer Metrics ---\n" + self._format_table() + "\n")
+        print(full)
+        return full
+
+    def _format_table(self) -> str:
+        """Internal: format table without printing."""
+        from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+        primary_set = set(METRIC_PRIMARY_KEYS.values())
+        metrics = [k for k in self._metric_keys if k in primary_set]
+        if not metrics:
+            metrics = self._metric_keys[:5]
+
+        name_w = max(25, max((len(l) for l in self._layers), default=25) + 2)
+        header = f"{'Layer':<{name_w}} {'Type':<16} {'Rank':>4}"
+        for m in metrics:
+            header += f" {m:>14}"
+        lines = [header, "-" * len(header)]
+
+        rank_map = {e["layer"]: e["rank"] for e in self.consensus_ranking}
+
+        for i, layer in enumerate(self._layers):
+            ltype = self.contributions[layer].get("layer_type", "?")[:15]
+            rank = rank_map.get(layer, "-")
+            row = f"{layer:<{name_w}} {ltype:<16} {str(rank):>4}"
+            for m in metrics:
+                val = self.contributions[layer].get(m)
+                if val is not None and isinstance(val, (int, float)):
+                    row += f" {val:>14.4f}" if abs(val) >= 0.001 else f" {val:>14.6f}"
+                else:
+                    row += f" {'N/A':>14}"
+            lines.append(row)
+
+        return "\n".join(lines)
+
+    def to_markdown(self) -> str:
+        """Export layer metrics as a Markdown table."""
+        from uni_layer.core.schema import METRIC_PRIMARY_KEYS
+        primary_set = set(METRIC_PRIMARY_KEYS.values())
+        metrics = [k for k in self._metric_keys if k in primary_set]
+        if not metrics:
+            metrics = self._metric_keys[:5]
+
+        header = "| Layer | Type | Rank |"
+        sep = "|---|---|---|"
+        for m in metrics:
+            header += f" {m} |"
+            sep += "---|"
+        lines = [header, sep]
+
+        rank_map = {e["layer"]: e["rank"] for e in self.consensus_ranking}
+
+        for layer in self._layers:
+            ltype = self.contributions[layer].get("layer_type", "?")
+            rank = rank_map.get(layer, "-")
+            row = f"| {layer} | {ltype} | {rank} |"
+            for m in metrics:
+                val = self.contributions[layer].get(m)
+                if val is not None and isinstance(val, (int, float)):
+                    row += f" {val:.4f} |"
+                else:
+                    row += " N/A |"
+            lines.append(row)
+
+        return "\n".join(lines)
+
+    # ------------------------------------------------------------------
     # Summary
     # ------------------------------------------------------------------
 
