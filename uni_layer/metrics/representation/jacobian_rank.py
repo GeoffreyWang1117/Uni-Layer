@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.utils.model_adapter import model_forward
 
 
 class JacobianRank(LayerMetric):
@@ -89,7 +90,7 @@ class JacobianRank(LayerMetric):
                 # Forward pass
                 with torch.enable_grad():
                     inputs.requires_grad_(True)
-                    model(inputs)
+                    model_forward(model, inputs)
 
                     if activations:
                         output = activations[0]
@@ -99,15 +100,10 @@ class JacobianRank(LayerMetric):
                             # Get scalar output by summing
                             scalar_output = output[i].sum()
 
-                            # Compute gradient w.r.t. layer input
-                            if isinstance(hook_fn.__self__.input, tuple):
-                                layer_input = hook_fn.__self__.input[0]
-                            else:
-                                layer_input = inputs
-
+                            # Compute gradient w.r.t. input
                             jacobian = torch.autograd.grad(
                                 scalar_output,
-                                layer_input,
+                                inputs,
                                 retain_graph=True,
                                 create_graph=False
                             )[0]

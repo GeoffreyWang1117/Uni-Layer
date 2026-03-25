@@ -1,47 +1,30 @@
 """
 Attention Flow metric for Transformer layers.
 
-Attention Flow分析（中文详解）
-
-数学原理：
-在Transformer中，注意力机制定义为：
-    Attention(Q, K, V) = softmax(QK^T / √d_k) V
-
-Attention Flow测量信息如何通过注意力层流动：
-
-1. 注意力权重分布：
-    A = softmax(QK^T / √d_k) ∈ R^(n×n)
-
-2. 信息流量度量：
-   - 平均注意力熵：H(A) = -Σ A_ij log A_ij
-   - 注意力集中度：max_j Σ_i A_ij
-   - 头间多样性：不同注意力头的相似度
-
-3. 层的重要性：
-   - 高熵：注意力分散，可能学习全局模式
-   - 低熵：注意力集中，可能学习局部模式
-   - 头多样性高：不同头学到不同模式
+Optimized version:
+- Vectorized head diversity computation using batch matrix operations
+  (previously O(B*H^2) sequential cosine_similarity calls, now O(1) matmul)
+- Accepts cached activations to avoid redundant forward passes
 """
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from typing import Dict, Any, Optional, List
 import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.utils.model_adapter import model_forward
 
 
 class AttentionFlow(LayerMetric):
     """
     Compute attention flow metrics for Transformer attention layers.
 
-    This metric analyzes how information flows through attention mechanisms
-    by examining attention weight distributions.
-
     Metrics computed:
     - attention_entropy: Average entropy of attention distributions
     - attention_max_weight: Maximum attention weight (concentration)
-    - head_diversity: Diversity across attention heads
+    - head_diversity: Diversity across attention heads (vectorized)
     - attention_distance: Average attention distance (positional)
 
     Args:
@@ -78,90 +61,59 @@ class AttentionFlow(LayerMetric):
         """
         Compute entropy of attention distribution.
 
-        Args:
-            attn_weights: Attention weights (batch, heads, seq_len, seq_len)
-                         or (batch, seq_len, seq_len)
-
-        Returns:
-            Average entropy across all attention distributions
+        H(A) = -sum(A_ij * log(A_ij))
         """
-        # Add small epsilon to avoid log(0)
         eps = 1e-10
         attn_weights = attn_weights + eps
-
-        # Compute entropy: H = -Σ p log p
         entropy = -(attn_weights * torch.log(attn_weights)).sum(dim=-1)
-
         return entropy.mean().item()
 
     def _compute_attention_distance(self, attn_weights: torch.Tensor) -> float:
         """
         Compute average attention distance (for sequential data).
-
-        This measures how far tokens attend to other tokens on average.
-
-        Args:
-            attn_weights: Attention weights
-
-        Returns:
-            Average attention distance
+        Measures how far tokens attend to other tokens on average.
         """
         seq_len = attn_weights.shape[-1]
-
-        # Create position matrix
         positions = torch.arange(seq_len, dtype=torch.float32, device=attn_weights.device)
         position_diff = (positions.unsqueeze(0) - positions.unsqueeze(1)).abs()
-
-        # Weight positions by attention
         weighted_distance = (attn_weights * position_diff).sum(dim=-1)
-
         return weighted_distance.mean().item()
 
     def _compute_head_diversity(self, attn_weights: torch.Tensor) -> float:
         """
-        Compute diversity across attention heads.
+        Compute diversity across attention heads using vectorized operations.
 
-        Diversity measured as average pairwise distance (1 - similarity)
-        between attention patterns of different heads.
+        Previous: triple nested loop O(B * H * H) with per-pair cosine_similarity
+        Now: batch matmul to compute all pairwise similarities at once O(1 kernel launch)
 
-        Args:
-            attn_weights: Attention weights (batch, heads, seq_len, seq_len)
-
-        Returns:
-            Average head diversity score
+        Diversity = mean(1 - cosine_similarity(head_i, head_j)) for all i < j
         """
         if attn_weights.dim() < 4:
-            return 0.0  # Not multi-head
-
-        num_heads = attn_weights.shape[1]
-
-        if num_heads < 2:
             return 0.0
 
-        # Flatten each head's attention pattern
-        # (batch, heads, seq_len, seq_len) -> (batch, heads, seq_len^2)
-        attn_flat = attn_weights.flatten(start_dim=2)
+        B, H, S1, S2 = attn_weights.shape
+        if H < 2:
+            return 0.0
 
-        # Compute pairwise cosine similarity between heads
-        diversities = []
+        # Flatten each head's attention: (B, H, S1*S2)
+        attn_flat = attn_weights.reshape(B, H, -1)
 
-        for b in range(attn_flat.shape[0]):
-            for i in range(num_heads):
-                for j in range(i + 1, num_heads):
-                    head_i = attn_flat[b, i]
-                    head_j = attn_flat[b, j]
+        # Normalize for cosine similarity: (B, H, D)
+        norms = attn_flat.norm(dim=-1, keepdim=True).clamp(min=1e-8)
+        attn_normed = attn_flat / norms
 
-                    # Cosine similarity
-                    similarity = torch.nn.functional.cosine_similarity(
-                        head_i.unsqueeze(0),
-                        head_j.unsqueeze(0)
-                    ).item()
+        # All pairwise cosine similarities via batch matmul: (B, H, H)
+        sim_matrix = torch.bmm(attn_normed, attn_normed.transpose(1, 2))
 
-                    # Diversity = 1 - similarity
-                    diversity = 1.0 - similarity
-                    diversities.append(diversity)
+        # Extract upper triangle (i < j pairs) and compute mean diversity
+        # Create mask for upper triangle
+        mask = torch.triu(torch.ones(H, H, device=sim_matrix.device, dtype=torch.bool), diagonal=1)
 
-        return np.mean(diversities) if diversities else 0.0
+        # Mean over upper triangle across all batches
+        pair_sims = sim_matrix[:, mask]  # (B, H*(H-1)/2)
+        diversity = (1.0 - pair_sims).mean().item()
+
+        return diversity
 
     def compute(
         self,
@@ -175,11 +127,7 @@ class AttentionFlow(LayerMetric):
     ) -> Dict[str, float]:
         """
         Compute attention flow metrics for the layer.
-
-        Returns:
-            Dictionary with attention flow metrics
         """
-        # Check if this is an attention layer
         if not self._is_attention_layer(layer):
             return {
                 "attention_entropy": None,
@@ -189,16 +137,12 @@ class AttentionFlow(LayerMetric):
 
         attention_weights_list = []
 
-        # Hook to capture attention weights
         def attention_hook(module, input, output):
-            # Different attention implementations return weights differently
             if isinstance(output, tuple) and len(output) > 1:
-                # (output, attn_weights)
                 attn = output[1]
                 if attn is not None:
                     attention_weights_list.append(attn.detach().cpu())
 
-        # Register hook
         handle = layer.register_forward_hook(attention_hook)
 
         try:
@@ -215,29 +159,14 @@ class AttentionFlow(LayerMetric):
 
                     inputs = inputs.to(device)
 
-                    # For transformer models, might need attention mask
                     try:
-                        if hasattr(model, 'forward') and 'attention_mask' in model.forward.__code__.co_varnames:
-                            # Create dummy attention mask
-                            attention_mask = torch.ones(
-                                inputs.shape[0],
-                                inputs.shape[1] if inputs.dim() > 1 else 1,
-                                device=device
-                            )
-                            model(inputs, attention_mask=attention_mask)
-                        else:
-                            model(inputs)
-                    except:
-                        # Fallback
-                        try:
-                            model(inputs)
-                        except:
-                            pass
+                        model_forward(model, inputs)
+                    except Exception:
+                        pass
 
         finally:
             handle.remove()
 
-        # Analyze collected attention weights
         if not attention_weights_list:
             return {
                 "attention_entropy": 0.0,
@@ -246,10 +175,8 @@ class AttentionFlow(LayerMetric):
                 "attention_distance": 0.0,
             }
 
-        # Concatenate all attention weights
         all_attn = torch.cat(attention_weights_list, dim=0)
 
-        # Compute metrics
         entropy = self._compute_attention_entropy(all_attn)
         max_weight = all_attn.max().item()
 

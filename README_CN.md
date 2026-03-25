@@ -1,292 +1,319 @@
-# Uni-Layer：跨NLP、视觉、语音、图网络和推荐系统的通用层贡献度分析框架
+# Uni-Layer：神经网络层贡献度分析框架
 
+**先理解你的层，再优化它们。**
+
+[![PyPI](https://img.shields.io/pypi/v/uni-layer.svg)](https://pypi.org/project/uni-layer/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://img.shields.io/badge/tests-168%20passed-brightgreen.svg)]()
 
-## 🚀 项目概述
+Uni-Layer 是一个 PyTorch 工具库，通过 **7 大理论类别的 13 种指标** 为神经网络的每一层打分。它告诉你哪些层最重要，从而实现更精准的剪枝、更高效的微调和更有效的蒸馏。
 
-**Uni-Layer** 是一个全面的层贡献度分析框架，旨在跨越多种深度学习架构（包括NLP、计算机视觉、语音、图神经网络和推荐系统）统一分析神经网络各层的功能、影响力及其在模型压缩与知识蒸馏中的价值。
+> 完整英文文档见 [README.md](README.md)
 
-不同于传统仅在单一领域研究层贡献度的工作，Uni-Layer提供了一套通用的API，可计算30+种层贡献度指标，涵盖7大类别的理论基础。
+---
 
-## 🎯 核心特性
+## 为什么需要 Uni-Layer？
 
-- **通用指标库**：30+ 层贡献度指标，跨越信息论、优化几何、谱方法等多个理论基础
-- **跨架构支持**：适用于Transformer、CNN、GNN、推荐系统、扩散模型等各类架构
-- **10+ 模型类别**：支持NLP（BERT、GPT、Llama）、视觉（ViT、ResNet）、语音（Whisper）、图（GCN、GAT）、推荐（DeepFM）等
-- **下游任务验证**：在蒸馏、剪枝、PEFT、模型解释等任务中验证有效性
-- **即插即用**：简单易用的API，可快速集成到现有PyTorch模型中
+大多数压缩和微调工具对所有层一视同仁，或依赖简单的权重大小启发式。Uni-Layer 用原则性的多指标分析替代了猜测。
 
-## 📊 支持的指标类别
+**在"层重要性通用评分"这个赛道上没有直接竞品：**
+- Captum 做输入归因，不做层排序
+- Torch-Pruning 的重要性指标只有 3-4 种，且与剪枝操作耦合
+- TransformerLens 只做 LLM 机制解释
+- **Uni-Layer 是唯一将 13 种层重要性指标统一到一个 API 并桥接到下游工具的库**
 
-### 1. 信息论 (Information Theory)
-- **互信息（Mutual Information）**：测量层激活与目标标签之间的信息量
-- **信息熵（Entropy）**：衡量层表征的多样性
-- **信息瓶颈（Information Bottleneck）**：即将支持
+| 你想做... | Uni-Layer 提供 | 配合使用 |
+|---|---|---|
+| **剪枝** | 每层重要性分数和剪枝比例 | [Torch-Pruning](https://github.com/VainF/Torch-Pruning) |
+| **LoRA 微调** | 目标层选择、自适应秩分配 | [HuggingFace PEFT](https://github.com/huggingface/peft) |
+| **知识蒸馏** | 层配对、每层蒸馏权重 | 任意蒸馏框架 |
+| **理解模型** | 多指标层贡献度画像 | 独立使用 |
 
-### 2. 优化几何 (Optimization Geometry)
-- **梯度范数（Gradient Norm）**：测量梯度流的强度
-- **Hessian迹（Hessian Trace）**：衡量损失曲面的曲率
-- **损失景观锐度（Loss Landscape Sharpness）**：评估局部最优的平坦程度
+---
 
-### 3. 概率贝叶斯 (Probabilistic Bayesian)
-- **Fisher信息（Fisher Information）**：测量参数对输出分布的敏感度
-- **Laplace后验方差（Laplace Posterior Variance）**：即将支持
-- **PAC-Bayes层界（PAC-Bayes Layer Bound）**：即将支持
-
-### 4. 谱与核方法 (Spectral & Kernel Methods)
-- **CKA（Centered Kernel Alignment）**：测量表征相似性
-- **CKTA（Centered Kernel Target Alignment）**：目标对齐度
-- **NTK分解（Neural Tangent Kernel）**：神经切线核分析
-- **谱有效秩（Spectral Effective Rank）**：表征多样性度量
-
-### 5. 表征结构 (Representation Structure)
-- **表征Jacobian秩（Representation Jacobian Rank）**：衡量层的表达能力
-- **表征多样性（Representation Diversity）**：特征冗余分析
-
-### 6. 鲁棒性 (Robustness)
-- **对抗层敏感性（Adversarial Layer Sensitivity）**：即将支持
-- **DropLayer鲁棒性（DropLayer Robustness）**：通过消融测试重要性
-- **层扰动影响（Layer Perturbation Impact）**：即将支持
-
-### 7. 架构特定 (Architecture-Specific)
-- **注意力流（Attention Flow）**：Transformer专用
-- **Patch归因（Patch Attribution）**：ViT专用
-- **Token混合影响（Token Mixing Influence）**：MLP-Mixer专用
-- **路径积分影响（Path Integral Influence）**：通用方法
-
-## 🏗️ 框架架构
-
-```
-uni_layer/
-├── metrics/              # 层贡献度指标
-│   ├── information_theory/   # 信息论指标
-│   ├── optimization/         # 优化几何指标
-│   ├── spectral/            # 谱与核方法指标
-│   ├── representation/      # 表征结构指标
-│   ├── robustness/          # 鲁棒性指标
-│   ├── bayesian/            # 贝叶斯指标
-│   └── architecture_specific/ # 架构特定指标
-├── models/               # 模型加载器与注册表
-├── benchmark/            # 基准测试评估流程
-├── visualization/        # 可视化工具
-└── utils/                # 工具函数
-```
-
-## 🚀 快速开始
-
-### 安装
+## 快速开始
 
 ```bash
 pip install uni-layer
 ```
 
-或从源码安装：
-
-```bash
-git clone https://github.com/GeoffreyWang1117/Uni-Layer.git
-cd Uni-Layer
-pip install -e .
-```
-
-### 基础用法
-
 ```python
 from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, CKA, MutualInformation
+from uni_layer.metrics import GradientNorm, CKA, BlockInfluence
 
-# 初始化分析器
 analyzer = LayerAnalyzer(model, task_type='classification')
-
-# 计算层贡献度
 contributions = analyzer.compute_metrics(
-    metrics=[GradientNorm(), CKA(), MutualInformation()],
-    data_loader=train_loader
+    metrics=[GradientNorm(), CKA(), BlockInfluence()],
+    data_loader=train_loader,
 )
 
-# 可视化结果
-analyzer.visualize(contributions, save_path='layer_analysis.png')
-
-# 用于下游任务
-pruning_strategy = analyzer.get_pruning_strategy(contributions)
-distillation_layers = analyzer.get_distillation_layers(contributions, top_k=6)
+# 按重要性排序
+for name, score in analyzer.rank_layers(contributions, 'gradient_norm'):
+    print(f"  {name}: {score:.4f}")
 ```
 
-## 🗜️ 模型压缩工具
+---
 
-Uni-Layer 提供了生产就绪的压缩工具，利用层贡献度分析实现智能压缩：
+## 输出格式
 
-### 1. **智能剪枝**
-基于层重要性使用差异化策略移除冗余权重/神经元。
+### compute_metrics() 输出
 
-```python
-from uni_layer.compression import LayerPruner, PruningStrategy
+返回结构化字典，每一层包含所有请求的指标值：
 
-pruner = LayerPruner(model, contributions, strategy=PruningStrategy.GRADIENT_NORM)
-pruned_model = pruner.prune_unstructured(pruning_ratios)
-
-# 实现50%+稀疏度，精度损失最小
-stats = pruner.get_sparsity_stats()
-speedup = pruner.estimate_speedup()
-```
-
-### 2. **知识蒸馏**
-自动层选择，将大模型蒸馏到小模型。
-
-```python
-from uni_layer.compression import KnowledgeDistiller, DistillationConfig
-
-config = DistillationConfig(temperature=4.0, alpha=0.7, top_k_layers=3)
-distiller = KnowledgeDistiller(teacher, student, contributions, config)
-
-# 基于CKA/GradNorm自动选择重要层
-for inputs, labels in data_loader:
-    loss_components = distiller.train_step(inputs, labels, optimizer)
-```
-
-### 3. **参数高效微调 (PEFT)**
-使用LoRA/适配器，自适应秩选择，实现参数高效微调。
-
-```python
-from uni_layer.compression import PEFTOptimizer, AdapterConfig
-
-config = AdapterConfig(method="lora", rank=8, adaptive_rank=True)
-peft_optimizer = PEFTOptimizer(model, contributions, config)
-
-# 自动选择层并计算自适应秩
-model_with_lora = peft_optimizer.inject_lora(selected_layers, ranks)
-
-# 可训练参数减少10-100倍
-efficiency = peft_optimizer.get_parameter_efficiency()
-```
-
-**详见 [压缩指南](docs/COMPRESSION_CN.md) 获取详细文档。**
-
-## 🔬 支持的模型类别
-
-| 类别 | 模型 | 状态 |
-|----------|--------|--------|
-| **NLP** | BERT、RoBERTa、GPT、Llama3 | ✅ |
-| **视觉** | ViT、Swin、ResNet、ConvNeXt | ✅ |
-| **语音** | Whisper、Conformer | ✅ |
-| **图** | GCN、GraphSAGE、GAT | ✅ |
-| **多模态** | CLIP、BLIP | ✅ |
-| **推荐** | DeepFM、DCNv2、AutoInt、DLRM | ✅ |
-| **强化学习** | Atari CNN、Transformer-RL | ✅ |
-| **扩散** | UNet | ✅ |
-| **MLP-Mixer** | Mixer-B/16 | ✅ |
-| **基线** | MLP、CNN、RNN | ✅ |
-
-## 📖 详细文档
-
-- [快速开始指南（中文）](docs/QUICKSTART_CN.md)
-- [指标详细说明（中文）](docs/METRICS_CN.md)
-- [API参考文档（中文）](docs/API_CN.md)
-- [使用示例](examples/)
-
-## 💡 应用场景
-
-### 1. 知识蒸馏
-自动选择最有价值的中间层进行知识传递：
-```python
-distill_layers = analyzer.get_distillation_layers(
-    contributions,
-    metric_name="gradient_norm",
-    top_k=6
-)
-```
-
-### 2. 模型剪枝
-基于层贡献度生成差异化剪枝策略：
-```python
-pruning_strategy = analyzer.get_pruning_strategy(
-    contributions,
-    metric_name="gradient_norm",
-    prune_ratio=0.3
-)
-```
-
-### 3. 参数高效微调（PEFT）
-识别最佳Adapter插入位置：
-```python
-adapter_layers = analyzer.get_peft_insertion_points(
-    contributions,
-    metric_name="gradient_norm",
-    num_adapters=4
-)
-```
-
-### 4. 模型解释
-统一解释不同架构的层级功能：
-```python
-rankings = analyzer.rank_layers(contributions, "gradient_norm")
-depth_analysis = analyzer.aggregate_by_depth(contributions, "gradient_norm")
-```
-
-## 🎓 引用
-
-如果您在研究中使用Uni-Layer，请引用：
-
-```bibtex
-@article{unilayer2025,
-  title={Uni-Layer: 跨深度学习架构的通用层贡献度分析框架},
-  author={Your Name},
-  journal={arXiv preprint},
-  year={2025}
+```json
+{
+  "0": {
+    "layer_idx": 0,
+    "layer_type": "linear",
+    "gradient_norm": 0.0193,
+    "gradient_norm_std": 0.0016,
+    "cka_score": 0.4161,
+    "effective_rank": 10.54,
+    "block_influence": 1.0,
+    "fisher_information": 0.0001
+  },
+  "2": {
+    "layer_idx": 1,
+    "layer_type": "linear",
+    "gradient_norm": 0.0494,
+    "cka_score": 0.5449,
+    "effective_rank": 20.18,
+    "block_influence": 1.0,
+    "fisher_information": 0.0002
+  },
+  "4": {
+    "layer_idx": 2,
+    "layer_type": "linear",
+    "gradient_norm": 0.0624,
+    "cka_score": 0.6233,
+    "effective_rank": 9.58,
+    "block_influence": 1.0,
+    "fisher_information": 0.0003
+  },
+  "6": {
+    "layer_idx": 3,
+    "layer_type": "linear",
+    "gradient_norm": 0.1094,
+    "cka_score": 1.0,
+    "effective_rank": 2.36,
+    "block_influence": 1.0,
+    "fisher_information": 0.0009
+  }
 }
 ```
 
-## 🤝 贡献
+### rank_layers() 输出
 
-欢迎贡献！请查看我们的[贡献指南](CONTRIBUTING.md)了解详情。
+返回按分数降序排列的 `(层名, 分数)` 元组列表：
 
-### 添加新指标
+```python
+[("6", 0.1094), ("4", 0.0624), ("2", 0.0494), ("0", 0.0193)]
+# 第 6 层（输出头）贡献最大；第 0 层（输入层）贡献最小
+```
 
-1. 继承`LayerMetric`基类
-2. 实现`compute()`方法
-3. 添加单元测试
-4. 更新文档
+### Transformer 模型输出示例
 
-示例：
+4 层 Transformer 的分析结果：
+
+```
+Layer              Type                  GradNorm  BlockInfluence  EffectiveRank
+--------------------------------------------------------------------------------
+blocks.0           transformer_block       0.1425          0.0278          94.47
+blocks.1           transformer_block       0.1404          0.0275          94.21
+blocks.2           transformer_block       0.1319          0.0265          93.92
+blocks.3           transformer_block       0.1276          0.0269          93.66
+```
+
+> 浅层 block 梯度范数稍高——它们在更积极地适应。BlockInfluence 全局较低（~0.027），因为残差连接占主导地位，每个 block 相对于跳跃路径的变换很小。EffectiveRank 均匀很高（~94），表明表征丰富、未退化。
+
+---
+
+## 13 种指标（7 大类别）
+
+| 类别 | 指标 | 衡量内容 |
+|---|---|---|
+| **优化几何** | `GradientNorm`, `HessianTrace`, `FisherInformation` | 层对损失曲面的影响 |
+| **谱与核方法** | `CKA`, `EffectiveRank`, `NTKTrace` | 表征相似性、多样性、核影响力 |
+| **信息论** | `ActivationEntropy`, `MutualInformation` | 信息含量与任务相关性 |
+| **表征结构** | `JacobianRank`, `BlockInfluence` | 表达能力与层冗余度 |
+| **鲁棒性** | `DropLayerRobustness` | 移除该层后的性能损失 |
+| **贝叶斯** | `LaplacePosterior` | 参数不确定性（Laplace 近似） |
+| **架构特定** | `AttentionFlow` | 注意力熵、头多样性（Transformer 专属） |
+
+### 每个指标的输出键
+
+| 指标 | 主键（用于排序） | 附属键 |
+|---|---|---|
+| GradientNorm | `gradient_norm` | `gradient_norm_std`, `_max`, `_min` |
+| HessianTrace | `hessian_trace` | `hessian_trace_std` |
+| FisherInformation | `fisher_information` | `fisher_mean` |
+| CKA | `cka_score` | |
+| EffectiveRank | `effective_rank` | `stable_rank`, `rank_ratio` |
+| NTKTrace | `ntk_trace` | `ntk_trace_per_param` |
+| ActivationEntropy | `activation_entropy` | `activation_mean`, `_std`, `_sparsity` |
+| MutualInformation | `mutual_information` | `mi_max`, `mi_std` |
+| JacobianRank | `jacobian_rank` | `jacobian_rank_ratio`, `_condition`, `_max_sv` |
+| BlockInfluence | `block_influence` | `block_similarity` |
+| DropLayerRobustness | `droplayer_loss_increase` | `droplayer_loss_ratio` |
+| LaplacePosterior | `laplace_posterior` | `laplace_posterior_std` |
+| AttentionFlow | `attention_entropy` | `attention_max_weight`, `head_diversity`, `attention_distance` |
+
+---
+
+## 集成桥
+
+### Torch-Pruning（剪枝）
+
+```python
+from uni_layer.integrations import TorchPruningBridge
+
+bridge = TorchPruningBridge(model, contributions)
+
+# 重要层少剪，不重要层多剪
+pruning_ratios = bridge.as_layer_pruning_ratios(
+    metric_name='gradient_norm', target_sparsity=0.5
+)
+protected = bridge.get_protected_layers(top_k=3)  # 保护最重要的 3 层
+```
+
+### HuggingFace PEFT（参数高效微调）
+
+```python
+from uni_layer.integrations import HuggingFacePEFTBridge
+from peft import LoraConfig, get_peft_model
+
+bridge = HuggingFacePEFTBridge(model, contributions)
+
+# 一键生成 LoRA 配置
+config_params = bridge.recommend_lora_config_params(metric_name='gradient_norm')
+peft_model = get_peft_model(model, LoraConfig(**config_params))
+
+# 或精细控制：每层不同的 LoRA 秩
+ranks = bridge.recommend_adaptive_ranks(base_rank=8, max_rank=64)
+```
+
+### 知识蒸馏
+
+```python
+from uni_layer.integrations import DistillationBridge
+
+bridge = DistillationBridge(teacher, student, contributions)
+
+pairs = bridge.recommend_layer_pairs(top_k=4)    # 教师-学生层映射
+weights = bridge.recommend_layer_weights()         # 每层蒸馏权重
+```
+
+---
+
+## HuggingFace 模型支持
+
+Uni-Layer 原生兼容 HuggingFace 模型（dict/dataclass 输出），自动注入 `attention_mask`：
+
+```python
+from transformers import AutoModel
+
+model = AutoModel.from_pretrained("bert-base-uncased")
+analyzer = LayerAnalyzer(model, task_type='classification')
+
+# 直接使用——dict 输出、attention_mask、labels 全自动处理
+contributions = analyzer.compute_metrics(
+    metrics=[GradientNorm(), BlockInfluence()],
+    data_loader=tokenized_loader,
+)
+```
+
+---
+
+## 示例
+
+| 示例 | 模型 | 文件 |
+|---|---|---|
+| ResNet 层分析 | ResNet-18 (CNN) | [`examples/resnet_layer_analysis.py`](examples/resnet_layer_analysis.py) |
+| ViT 注意力分析 | Vision Transformer | [`examples/vit_layer_analysis.py`](examples/vit_layer_analysis.py) |
+| BERT 层分析 + LoRA | BERT 风格 Transformer | [`examples/bert_layer_analysis.py`](examples/bert_layer_analysis.py) |
+| Torch-Pruning 集成 | 通用模型 | [`examples/integrate_torch_pruning.py`](examples/integrate_torch_pruning.py) |
+| HuggingFace PEFT 集成 | 通用模型 | [`examples/integrate_huggingface_peft.py`](examples/integrate_huggingface_peft.py) |
+| 知识蒸馏 | 教师-学生 | [`examples/integrate_distillation.py`](examples/integrate_distillation.py) |
+
+---
+
+## 安装
+
+```bash
+pip install uni-layer                    # 核心
+pip install uni-layer[integrations]      # + torch-pruning, peft, transformers
+pip install uni-layer[dev]               # + pytest, black, flake8, mypy
+pip install uni-layer[all]               # 全部
+```
+
+从源码安装：
+
+```bash
+git clone https://github.com/GeoffreyWang1117/Uni-Layer.git
+cd Uni-Layer && pip install -e ".[dev]"
+```
+
+---
+
+## 路线图
+
+### v0.3.0（下一版本）
+- [ ] 扩散模型支持（UNet 时间步感知分析）
+- [ ] Mamba / SSM 架构支持
+- [ ] MoE 路由层分析
+- [ ] 残差感知 DropLayer 指标
+- [ ] 层间 CKA 相似度矩阵
+
+### v0.4.0
+- [ ] GNN 支持（PyG MessagePassing 层）
+- [ ] 多模态模型分支分析（视觉编码器 + 语言解码器）
+- [ ] Wanda 风格重要性（权重 x 激活范数）
+- [ ] IG 灵敏度评分（IGU-LoRA 风格）
+- [ ] ONNX / TensorRT 优化提示导出
+
+### v1.0.0
+- [ ] 稳定 API，完全向后兼容
+- [ ] Web 交互式可视化面板
+- [ ] 大模型分布式分析（FSDP / DeepSpeed）
+- [ ] 热门模型预计算分析（BERT、LLaMA、ViT 等）
+- [ ] 学术论文与完整基准评测套件
+
+---
+
+## 添加自定义指标
+
 ```python
 from uni_layer.core.base_metric import LayerMetric
 
 class MyMetric(LayerMetric):
     def __init__(self, **kwargs):
-        super().__init__(
-            name="my_metric",
-            category="custom",
-            requires_gradient=True,
-            requires_data=True,
-            **kwargs
-        )
+        super().__init__(name="my_metric", category="custom",
+                         requires_gradient=True, requires_data=True, **kwargs)
 
     def compute(self, model, layer, layer_name, layer_idx,
                 data_loader, device, **kwargs):
-        # 您的指标计算逻辑
+        # 你的指标计算逻辑
         return {"my_metric": value}
 ```
 
-## 📄 许可证
+---
 
-本项目采用MIT许可证 - 查看[LICENSE](LICENSE)文件了解详情。
+## 引用
 
-## 🔗 相关链接
+```bibtex
+@software{unilayer2025,
+  title={Uni-Layer: A Universal Framework for Layer Contribution Analysis},
+  author={Geoffrey Wang},
+  year={2025},
+  url={https://github.com/GeoffreyWang1117/Uni-Layer}
+}
+```
 
-- [完整文档](https://uni-layer.readthedocs.io)
-- [论文](https://arxiv.org/abs/xxx)
-- [示例代码](examples/)
-- [问题反馈](https://github.com/GeoffreyWang1117/Uni-Layer/issues)
+## 许可证
 
-## 🙏 致谢
-
-本项目建立在神经网络可解释性、模型压缩和表征学习的研究基础之上。感谢开源社区的贡献。
-
-## 📮 联系方式
-
-- GitHub Issues: [问题追踪](https://github.com/GeoffreyWang1117/Uni-Layer/issues)
-- 讨论区: [GitHub Discussions](https://github.com/GeoffreyWang1117/Uni-Layer/discussions)
+MIT License。详见 [LICENSE](LICENSE)。
 
 ---
 
-**注意**：本框架仍在积极开发中。我们欢迎反馈和建议！
+**GitHub**: [GeoffreyWang1117/Uni-Layer](https://github.com/GeoffreyWang1117/Uni-Layer) | **Issues**: [问题反馈](https://github.com/GeoffreyWang1117/Uni-Layer/issues)

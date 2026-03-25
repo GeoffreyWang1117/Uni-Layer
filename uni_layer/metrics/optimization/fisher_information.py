@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.utils.model_adapter import extract_logits, model_forward
 
 
 class FisherInformation(LayerMetric):
@@ -83,22 +84,23 @@ class FisherInformation(LayerMetric):
 
             # Forward pass
             model.zero_grad()
-            outputs = model(inputs)
+            outputs = model_forward(model, inputs, targets)
+            logits = extract_logits(outputs)
 
             if self.empirical and targets is not None:
                 # Empirical Fisher: use actual labels
                 if criterion is not None:
-                    loss = criterion(outputs, targets)
+                    loss = criterion(logits, targets)
                 else:
-                    loss = outputs.mean()
+                    loss = logits.mean()
             else:
                 # True Fisher: sample from model's output distribution
-                if outputs.dim() == 2:  # Classification
-                    probs = torch.softmax(outputs, dim=1)
+                if logits.dim() == 2:  # Classification
+                    probs = torch.softmax(logits, dim=1)
                     sampled_targets = torch.multinomial(probs, 1).squeeze()
-                    loss = nn.functional.cross_entropy(outputs, sampled_targets)
+                    loss = nn.functional.cross_entropy(logits, sampled_targets)
                 else:
-                    loss = outputs.mean()
+                    loss = logits.mean()
 
             # Backward pass
             loss.backward()

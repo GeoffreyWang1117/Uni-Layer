@@ -9,6 +9,7 @@ import numpy as np
 from sklearn.feature_selection import mutual_info_classif, mutual_info_regression
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.utils.model_adapter import model_forward
 
 
 class MutualInformation(LayerMetric):
@@ -82,7 +83,7 @@ class MutualInformation(LayerMetric):
                         return {"mutual_information": 0.0}
 
                     inputs = inputs.to(device)
-                    model(inputs)
+                    model_forward(model, inputs)
                     targets_list.append(targets.cpu())
 
         finally:

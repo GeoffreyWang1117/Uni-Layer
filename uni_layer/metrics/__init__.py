@@ -16,6 +16,7 @@ from uni_layer.metrics.information_theory.entropy import ActivationEntropy
 
 # Representation metrics
 from uni_layer.metrics.representation.jacobian_rank import JacobianRank
+from uni_layer.metrics.representation.block_influence import BlockInfluence
 
 # Robustness metrics
 from uni_layer.metrics.robustness.droplayer import DropLayerRobustness
@@ -40,6 +41,7 @@ __all__ = [
     "ActivationEntropy",
     # Representation
     "JacobianRank",
+    "BlockInfluence",
     # Robustness
     "DropLayerRobustness",
     # Bayesian

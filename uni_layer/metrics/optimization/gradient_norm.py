@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 import numpy as np
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.utils.model_adapter import compute_loss, model_forward
 
 
 class GradientNorm(LayerMetric):
@@ -84,15 +85,8 @@ class GradientNorm(LayerMetric):
 
             # Forward pass
             model.zero_grad()
-            outputs = model(inputs)
-
-            # Compute loss
-            if criterion is not None and targets is not None:
-                loss = criterion(outputs, targets)
-            else:
-                loss = outputs.mean()
-
-            # Backward pass
+            outputs = model_forward(model, inputs, targets)
+            loss = compute_loss(outputs, targets, criterion)
             loss.backward()
 
             # Collect gradient norms for this layer

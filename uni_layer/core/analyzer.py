@@ -10,6 +10,7 @@ import numpy as np
 from tqdm import tqdm
 
 from uni_layer.core.base_metric import LayerMetric
+from uni_layer.core.cache import ActivationCache, GradientCache, BatchCache
 from uni_layer.utils.layer_utils import get_model_layers, identify_layer_type
 
 
@@ -20,7 +21,12 @@ class LayerAnalyzer:
     This class provides a unified interface for:
     - Computing multiple layer contribution metrics
     - Analyzing layer importance across different architectures
-    - Generating insights for downstream tasks (pruning, distillation, PEFT)
+    - Providing layer-level recommendations for downstream optimization
+
+    Use with integration bridges for actionable optimization:
+    - uni_layer.integrations.TorchPruningBridge (pruning)
+    - uni_layer.integrations.HuggingFacePEFTBridge (LoRA/Adapters)
+    - uni_layer.integrations.DistillationBridge (distillation)
 
     Example:
         >>> analyzer = LayerAnalyzer(model, task_type='classification')
@@ -28,7 +34,7 @@ class LayerAnalyzer:
         ...     metrics=[GradientNorm(), CKA()],
         ...     data_loader=train_loader
         ... )
-        >>> analyzer.visualize(contributions)
+        >>> rankings = analyzer.rank_layers(contributions, 'gradient_norm')
     """
 
     def __init__(
@@ -67,7 +73,7 @@ class LayerAnalyzer:
         self.layers = get_model_layers(model)
         self.layer_types = {name: identify_layer_type(layer) for name, layer in self.layers.items()}
 
-        print(f"✓ Initialized LayerAnalyzer with {len(self.layers)} layers")
+        print(f"Initialized LayerAnalyzer with {len(self.layers)} layers")
         print(f"  Device: {self.device}")
         print(f"  Task Type: {task_type}")
 
@@ -77,16 +83,24 @@ class LayerAnalyzer:
         data_loader: Optional[Any] = None,
         layer_names: Optional[List[str]] = None,
         verbose: bool = True,
+        use_cache: bool = True,
+        num_batches: int = 10,
         **kwargs
     ) -> Dict[str, Dict[str, float]]:
         """
         Compute multiple layer contribution metrics.
+
+        When use_cache=True (default), activations and gradients are captured
+        once and shared across all metrics that need them, dramatically reducing
+        the number of forward/backward passes.
 
         Args:
             metrics: List of LayerMetric instances to compute
             data_loader: DataLoader for data-dependent metrics
             layer_names: Specific layers to analyze (default: all layers)
             verbose: Whether to show progress bars
+            use_cache: Whether to cache activations/gradients (default: True)
+            num_batches: Number of batches for cache capture
             **kwargs: Additional arguments passed to metrics
 
         Returns:
@@ -105,13 +119,125 @@ class LayerAnalyzer:
                 "layer_type": self.layer_types[layer_name],
             }
 
-        # Compute each metric
+        if use_cache and data_loader is not None:
+            results = self._compute_with_cache(
+                metrics, data_loader, layer_names, results, verbose, num_batches, **kwargs
+            )
+        else:
+            results = self._compute_without_cache(
+                metrics, data_loader, layer_names, results, verbose, **kwargs
+            )
+
+        return results
+
+    def _compute_with_cache(
+        self,
+        metrics: List[LayerMetric],
+        data_loader: Any,
+        layer_names: List[str],
+        results: OrderedDict,
+        verbose: bool,
+        num_batches: int,
+        **kwargs
+    ) -> OrderedDict:
+        """Compute metrics using shared activation/gradient caches."""
+
+        # Cache data batches so we don't re-iterate the DataLoader
+        batch_cache = BatchCache(data_loader, num_batches=num_batches, device=self.device)
+
+        # Separate metrics by type
+        needs_activation = [m for m in metrics if not m.requires_gradient]
+        needs_gradient = [m for m in metrics if m.requires_gradient]
+
+        # Build layer subset for caching
+        layers_subset = {n: self.layers[n] for n in layer_names if n in self.layers}
+
+        # Phase 1: Activation-based metrics (one forward pass for all layers)
+        if needs_activation:
+            if verbose:
+                print(f"  Caching activations (1 forward pass for {len(layers_subset)} layers)...")
+
+            act_cache = ActivationCache(self.model, layers_subset)
+            act_cache.capture(batch_cache, num_batches=num_batches, device=self.device)
+
+            for metric in tqdm(needs_activation, desc="Activation metrics", disable=not verbose):
+                for layer_name in layer_names:
+                    layer = self.layers.get(layer_name)
+                    if layer is None:
+                        continue
+                    layer_idx = list(self.layers.keys()).index(layer_name)
+
+                    try:
+                        # Pass cached activations via kwargs
+                        metric_values = metric.compute(
+                            model=self.model,
+                            layer=layer,
+                            layer_name=layer_name,
+                            layer_idx=layer_idx,
+                            data_loader=batch_cache,
+                            device=self.device,
+                            criterion=self.criterion,
+                            _cached_activations=act_cache.get(layer_name),
+                            **kwargs
+                        )
+                        results[layer_name].update(metric_values)
+                    except Exception as e:
+                        if verbose:
+                            print(f"  Warning: {metric.name} for {layer_name}: {e}")
+                        results[layer_name][metric.name] = None
+
+            del act_cache
+
+        # Phase 2: Gradient-based metrics (must do own backward passes)
+        if needs_gradient:
+            if verbose:
+                print(f"  Computing {len(needs_gradient)} gradient-based metrics...")
+
+            for metric in tqdm(needs_gradient, desc="Gradient metrics", disable=not verbose):
+                # Set model to train mode for gradient computation
+                self.model.train()
+
+                for layer_name in tqdm(layer_names, desc=f"  {metric.name}", disable=not verbose, leave=False):
+                    layer = self.layers.get(layer_name)
+                    if layer is None:
+                        continue
+                    layer_idx = list(self.layers.keys()).index(layer_name)
+
+                    try:
+                        metric_values = metric.compute(
+                            model=self.model,
+                            layer=layer,
+                            layer_name=layer_name,
+                            layer_idx=layer_idx,
+                            data_loader=batch_cache,
+                            device=self.device,
+                            criterion=self.criterion,
+                            **kwargs
+                        )
+                        results[layer_name].update(metric_values)
+                    except Exception as e:
+                        if verbose:
+                            print(f"  Warning: {metric.name} for {layer_name}: {e}")
+                        results[layer_name][metric.name] = None
+
+        return results
+
+    def _compute_without_cache(
+        self,
+        metrics: List[LayerMetric],
+        data_loader: Any,
+        layer_names: List[str],
+        results: OrderedDict,
+        verbose: bool,
+        **kwargs
+    ) -> OrderedDict:
+        """Original compute path (no caching)."""
         for metric in tqdm(metrics, desc="Computing metrics", disable=not verbose):
             if metric.requires_data and data_loader is None:
-                print(f"⚠ Skipping {metric.name}: requires data_loader")
+                if verbose:
+                    print(f"  Skipping {metric.name}: requires data_loader")
                 continue
 
-            # Set model to appropriate mode
             if metric.requires_gradient:
                 self.model.train()
             else:
@@ -132,13 +258,10 @@ class LayerAnalyzer:
                         criterion=self.criterion,
                         **kwargs
                     )
-
-                    # Merge metric values into results
                     results[layer_name].update(metric_values)
-
                 except Exception as e:
                     if verbose:
-                        print(f"⚠ Error computing {metric.name} for {layer_name}: {e}")
+                        print(f"  Warning: {metric.name} for {layer_name}: {e}")
                     results[layer_name][metric.name] = None
 
         return results
@@ -197,7 +320,10 @@ class LayerAnalyzer:
         prune_ratio: float = 0.3
     ) -> Dict[str, float]:
         """
-        Generate layer-wise pruning strategy based on contributions.
+        Recommend layer-wise pruning ratios based on contributions.
+
+        For production pruning workflows, use this with
+        uni_layer.integrations.TorchPruningBridge instead.
 
         Args:
             contributions: Output from compute_metrics()
@@ -205,7 +331,7 @@ class LayerAnalyzer:
             prune_ratio: Overall pruning ratio (0-1)
 
         Returns:
-            Dictionary mapping layer names to pruning ratios
+            Dictionary mapping layer names to recommended pruning ratios
         """
         rankings = self.rank_layers(contributions, metric_name, ascending=True)
 
@@ -227,7 +353,10 @@ class LayerAnalyzer:
         top_k: int = 6
     ) -> List[str]:
         """
-        Select layers for knowledge distillation based on contributions.
+        Recommend layers for knowledge distillation based on contributions.
+
+        For production distillation workflows, use this with
+        uni_layer.integrations.DistillationBridge instead.
 
         Args:
             contributions: Output from compute_metrics()
@@ -235,7 +364,7 @@ class LayerAnalyzer:
             top_k: Number of layers to select
 
         Returns:
-            List of layer names for distillation
+            List of recommended layer names for distillation
         """
         return self.get_top_k_layers(contributions, metric_name, k=top_k)
 
@@ -246,7 +375,10 @@ class LayerAnalyzer:
         num_adapters: int = 4
     ) -> List[str]:
         """
-        Identify optimal insertion points for parameter-efficient fine-tuning adapters.
+        Recommend insertion points for parameter-efficient fine-tuning adapters.
+
+        For production PEFT workflows, use this with
+        uni_layer.integrations.HuggingFacePEFTBridge instead.
 
         Args:
             contributions: Output from compute_metrics()
@@ -254,7 +386,7 @@ class LayerAnalyzer:
             num_adapters: Number of adapter insertion points
 
         Returns:
-            List of layer names for adapter insertion
+            List of recommended layer names for adapter insertion
         """
         return self.get_top_k_layers(contributions, metric_name, k=num_adapters)
 

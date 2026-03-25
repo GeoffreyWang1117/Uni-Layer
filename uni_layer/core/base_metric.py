@@ -8,6 +8,8 @@ from typing import Dict, Any, Optional, List
 import torch
 import torch.nn as nn
 
+from uni_layer.utils.model_adapter import extract_logits, compute_loss, model_forward
+
 
 class LayerMetric(ABC):
     """
@@ -73,7 +75,8 @@ class LayerMetric(ABC):
         model: nn.Module,
         layer: nn.Module,
         data_loader: Any,
-        num_batches: int = 10
+        num_batches: int = 10,
+        device: Optional[str] = None,
     ) -> List[torch.Tensor]:
         """
         Helper method to extract layer activations.
@@ -83,13 +86,19 @@ class LayerMetric(ABC):
             layer: The specific layer to analyze
             data_loader: DataLoader for input data
             num_batches: Number of batches to process
+            device: Device to run on (auto-detects from model if None)
 
         Returns:
             List of activation tensors
         """
+        if device is None:
+            device = next(model.parameters()).device
+
         activations = []
 
         def hook_fn(module, input, output):
+            if isinstance(output, (tuple, list)):
+                output = output[0]
             activations.append(output.detach().cpu())
 
         handle = layer.register_forward_hook(hook_fn)
@@ -106,10 +115,9 @@ class LayerMetric(ABC):
                     else:
                         inputs = batch
 
-                    if torch.cuda.is_available():
-                        inputs = inputs.cuda()
+                    inputs = inputs.to(device)
 
-                    model(inputs)
+                    model_forward(model, inputs)
         finally:
             handle.remove()
 
@@ -121,7 +129,8 @@ class LayerMetric(ABC):
         layer: nn.Module,
         data_loader: Any,
         criterion: nn.Module,
-        num_batches: int = 10
+        num_batches: int = 10,
+        device: Optional[str] = None,
     ) -> List[torch.Tensor]:
         """
         Helper method to extract layer gradients.
@@ -132,10 +141,14 @@ class LayerMetric(ABC):
             data_loader: DataLoader for input data
             criterion: Loss function
             num_batches: Number of batches to process
+            device: Device to run on (auto-detects from model if None)
 
         Returns:
             List of gradient tensors
         """
+        if device is None:
+            device = next(model.parameters()).device
+
         gradients = []
 
         def hook_fn(module, grad_input, grad_output):
@@ -155,19 +168,13 @@ class LayerMetric(ABC):
                 else:
                     inputs, targets = batch, None
 
-                if torch.cuda.is_available():
-                    inputs = inputs.cuda()
-                    if targets is not None:
-                        targets = targets.cuda()
+                inputs = inputs.to(device)
+                if targets is not None:
+                    targets = targets.to(device)
 
                 model.zero_grad()
-                outputs = model(inputs)
-
-                if targets is not None:
-                    loss = criterion(outputs, targets)
-                else:
-                    loss = outputs.mean()
-
+                outputs = model_forward(model, inputs, targets)
+                loss = compute_loss(outputs, targets, criterion)
                 loss.backward()
         finally:
             handle.remove()
