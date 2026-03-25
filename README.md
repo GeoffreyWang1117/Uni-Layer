@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/uni-layer.svg)](https://pypi.org/project/uni-layer/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-168%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)]()
 
 Uni-Layer is a PyTorch toolkit that scores every layer in your neural network across **13 metrics in 7 theoretical categories**. It tells you which layers matter most — so you can prune smarter, fine-tune better, and distill more effectively.
 
@@ -24,7 +24,7 @@ There is no other library that does this. Captum does input attribution. Torch-P
 | **Prune** a model | Per-layer importance scores & pruning ratios | [Torch-Pruning](https://github.com/VainF/Torch-Pruning) |
 | **LoRA fine-tune** | Which layers to target, adaptive rank allocation | [HuggingFace PEFT](https://github.com/huggingface/peft) |
 | **Distill** knowledge | Layer pairing & per-layer distillation weights | Any distillation framework |
-| **Understand** a model | Multi-metric layer contribution profile | Standalone |
+| **Understand** a model | Auto-generated layer profile with actionable insights | Standalone |
 
 ---
 
@@ -35,87 +35,100 @@ pip install uni-layer
 ```
 
 ```python
-from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, CKA, BlockInfluence
+from uni_layer import LayerAnalyzer, LayerProfile
 
 analyzer = LayerAnalyzer(model, task_type='classification')
+
+# One-line analysis with preset (recommended for LLMs)
+contributions = analyzer.compute_metrics(
+    data_loader=train_loader, preset="llm_fast",
+)
+
+# Or pick metrics manually
+from uni_layer.metrics import GradientNorm, CKA, BlockInfluence
 contributions = analyzer.compute_metrics(
     metrics=[GradientNorm(), CKA(), BlockInfluence()],
     data_loader=train_loader,
 )
 
-# Rank layers by importance
-for name, score in analyzer.rank_layers(contributions, 'gradient_norm'):
-    print(f"  {name}: {score:.4f}")
+# Auto-generate insights (pure CPU, milliseconds)
+profile = LayerProfile(contributions, model_name="my-model")
+print(profile.summary())
+print(profile.pruning_suggestion(target_ratio=0.3))
+print(profile.lora_suggestion(base_rank=8))
 ```
+
+### Presets
+
+| Preset | Metrics | Use case |
+|---|---|---|
+| `"llm_fast"` | BlockInfluence, EffectiveRank, CKA, ActivationEntropy, AttentionFlow | LLM quick scan (seconds) |
+| `"llm_full"` | + GradientNorm, FisherInformation | LLM full analysis (minutes) |
+| `"quick"` | GradientNorm, BlockInfluence, EffectiveRank | Fastest overview |
+| `"full"` | All 13 metrics | Small model deep analysis |
+
+---
+
+## LayerProfile: Auto Insights
+
+`LayerProfile` takes the raw numbers from `compute_metrics()` and turns them into actionable insights. No extra GPU cost — all analysis runs on CPU in milliseconds.
+
+```python
+from uni_layer import LayerProfile
+
+profile = LayerProfile(contributions, model_name="Llama-3.2-3B")
+
+profile.redundant_layers        # ["layers.14", "layers.15"] — safe to prune
+profile.bottleneck_layers       # ["layers.30"] — representation bottleneck
+profile.consensus_ranking       # multi-metric Borda count ranking
+profile.depth_trends            # {"gradient_norm": {"trend": "U-shaped", ...}}
+profile.anomalies               # layers with z-score > 2 on any metric
+profile.layer_clusters          # {"high_contribution": [...], "low_contribution": [...]}
+
+profile.pruning_suggestion(0.3) # {"safe_to_remove": [...], "estimated_speedup": "25%"}
+profile.lora_suggestion(8)      # {"target_layers": [...], "adaptive_ranks": {...}}
+profile.summary()               # one-paragraph natural language summary
+profile.to_dict()               # full JSON export
+```
+
+Example summary output:
+> "bert-base-uncased (12-layer model). analyzed with 10 metrics. U-shaped gradient norm distribution. 2 redundant layers (encoder.layer.5, encoder.layer.6) safe to prune. most important: encoder.layer.9, least important: encoder.layer.3."
 
 ---
 
 ## Output Format
 
-Every call to `compute_metrics()` returns a structured dict. Here is a real example from a 4-layer MLP:
+Every call to `compute_metrics()` returns a structured dict:
 
 ```json
 {
-  "0": {
+  "encoder.layer.0": {
     "layer_idx": 0,
-    "layer_type": "linear",
+    "layer_type": "transformer_block",
     "gradient_norm": 0.0193,
-    "gradient_norm_std": 0.0016,
     "cka_score": 0.4161,
-    "effective_rank": 10.54,
-    "block_influence": 1.0,
-    "fisher_information": 0.0001
+    "block_influence": 0.1465,
+    "effective_rank": 10.54
   },
-  "2": {
-    "layer_idx": 1,
-    "layer_type": "linear",
-    "gradient_norm": 0.0494,
-    "cka_score": 0.5449,
-    "effective_rank": 20.18,
-    "block_influence": 1.0,
-    "fisher_information": 0.0002
-  },
-  "4": {
-    "layer_idx": 2,
-    "layer_type": "linear",
-    "gradient_norm": 0.0624,
-    "cka_score": 0.6233,
-    "effective_rank": 9.58,
-    "block_influence": 1.0,
-    "fisher_information": 0.0003
-  },
-  "6": {
-    "layer_idx": 3,
-    "layer_type": "linear",
-    "gradient_norm": 0.1094,
-    "cka_score": 1.0,
-    "effective_rank": 2.36,
-    "block_influence": 1.0,
-    "fisher_information": 0.0009
-  }
+  ...
 }
 ```
 
 `rank_layers()` returns sorted `(name, score)` tuples:
 
 ```python
-[("6", 0.1094), ("4", 0.0624), ("2", 0.0494), ("0", 0.0193)]
-# Layer 6 (output head) contributes most; Layer 0 (input) contributes least.
+[("encoder.layer.9", 0.1094), ("encoder.layer.0", 0.0624), ...]
 ```
 
-And here is a 4-block Transformer analyzed with `GradientNorm`, `BlockInfluence`, and `EffectiveRank`:
+### Verified on 20+ HuggingFace Models
 
-```
-Layer              Type                  GradNorm  BlockInfluence  EffectiveRank
---------------------------------------------------------------------------------
-blocks.0           transformer_block       0.1425          0.0278          94.47
-blocks.1           transformer_block       0.1404          0.0275          94.21
-blocks.2           transformer_block       0.1319          0.0265          93.92
-blocks.3           transformer_block       0.1276          0.0269          93.66
-```
-
-> Early blocks have slightly higher gradient norms — they are adapting more. BlockInfluence is low everywhere (all ~0.027) because residual connections dominate, meaning each block's transformation is small relative to the skip path. EffectiveRank is uniformly high (~94), indicating rich, non-degenerate representations.
+| Architecture | Models tested | Block-level extraction |
+|---|---|---|
+| NLP Encoder | BERT, RoBERTa, DeBERTa-v3, DistilBERT, SciBERT, MiniLM | `encoder.layer.N` |
+| NLP Decoder | GPT-2, Pythia, BLOOM, Falcon, TinyLlama, Llama-3.2-3B, Qwen2.5-3B | `model.layers.N` |
+| Seq2Seq | ByT5 | `encoder.block.N` + `decoder.block.N` |
+| Vision | DINOv2 | `encoder.layer.N` |
+| Speech | Wav2Vec2, HuBERT | `encoder.layers.N` |
 
 ---
 
@@ -131,7 +144,8 @@ blocks.3           transformer_block       0.1276          0.0269          93.66
 | **Bayesian** | `LaplacePosterior` | Parameter uncertainty (Laplace approximation) |
 | **Architecture** | `AttentionFlow` | Attention entropy, head diversity (Transformers) |
 
-Each metric returns a dict with a **primary key** (used for ranking) and optional secondary keys:
+<details>
+<summary>Full output keys per metric</summary>
 
 | Metric | Primary Key | Additional Keys |
 |---|---|---|
@@ -149,6 +163,8 @@ Each metric returns a dict with a **primary key** (used for ranking) and optiona
 | LaplacePosterior | `laplace_posterior` | `laplace_posterior_std` |
 | AttentionFlow | `attention_entropy` | `attention_max_weight`, `head_diversity`, `attention_distance` |
 
+</details>
+
 ---
 
 ## Integration Bridges
@@ -159,20 +175,10 @@ Each metric returns a dict with a **primary key** (used for ranking) and optiona
 from uni_layer.integrations import TorchPruningBridge
 
 bridge = TorchPruningBridge(model, contributions)
-
-# Important layers get low pruning ratios, unimportant layers get high ratios
 pruning_ratios = bridge.as_layer_pruning_ratios(
     metric_name='gradient_norm', target_sparsity=0.5
 )
 protected = bridge.get_protected_layers(top_k=3)
-
-# Use with torch-pruning
-import torch_pruning as tp
-pruner = tp.pruner.MetaPruner(
-    model, example_inputs,
-    importance=tp.importance.MagnitudeImportance(),
-    pruning_ratio_dict=pruning_ratios,
-)
 ```
 
 ### HuggingFace PEFT
@@ -182,13 +188,8 @@ from uni_layer.integrations import HuggingFacePEFTBridge
 from peft import LoraConfig, get_peft_model
 
 bridge = HuggingFacePEFTBridge(model, contributions)
-
-# Auto-select LoRA targets and adaptive rank
 config_params = bridge.recommend_lora_config_params(metric_name='gradient_norm')
 peft_model = get_peft_model(model, LoraConfig(**config_params))
-
-# Or fine-grained control: different rank per layer
-ranks = bridge.recommend_adaptive_ranks(base_rank=8, max_rank=64)
 ```
 
 ### Knowledge Distillation
@@ -197,30 +198,39 @@ ranks = bridge.recommend_adaptive_ranks(base_rank=8, max_rank=64)
 from uni_layer.integrations import DistillationBridge
 
 bridge = DistillationBridge(teacher, student, contributions)
+pairs = bridge.recommend_layer_pairs(top_k=4)
+weights = bridge.recommend_layer_weights()
+```
 
-pairs = bridge.recommend_layer_pairs(top_k=4)    # teacher-student layer mapping
-weights = bridge.recommend_layer_weights()         # per-layer distillation weights
+---
+
+## CLI
+
+```bash
+uni-layer info                                    # version, PyTorch, CUDA, metrics
+uni-layer list-metrics                            # all 13 metrics with keys
+uni-layer list-metrics --format json              # machine-readable
+uni-layer analyze bert-base-uncased               # analyze a HuggingFace model
+uni-layer analyze bert-base-uncased -m GradientNorm,BlockInfluence -o results.json
 ```
 
 ---
 
 ## HuggingFace Model Support
 
-Uni-Layer natively handles HuggingFace models that return dataclass/dict outputs, with automatic `attention_mask` injection:
+Uni-Layer natively handles HuggingFace models — dict/dataclass outputs, `attention_mask`, `decoder_input_ids` (Seq2Seq) are all handled automatically:
 
 ```python
 from transformers import AutoModel
-from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, BlockInfluence
+from uni_layer import LayerAnalyzer, LayerProfile
 
 model = AutoModel.from_pretrained("bert-base-uncased")
 analyzer = LayerAnalyzer(model, task_type='classification')
-
-# Just works -- dict outputs, attention_mask, labels all handled automatically
 contributions = analyzer.compute_metrics(
-    metrics=[GradientNorm(), BlockInfluence()],
-    data_loader=tokenized_loader,
+    data_loader=tokenized_loader, preset="llm_fast",
 )
+profile = LayerProfile(contributions)
+print(profile.summary())
 ```
 
 ---
@@ -258,18 +268,19 @@ cd Uni-Layer && pip install -e ".[dev]"
 
 ## Roadmap
 
-### v0.3.0 (Next)
+### v0.4.0 (Next)
 - [ ] Diffusion model support (UNet timestep-aware analysis)
 - [ ] Mamba / SSM architecture support
 - [ ] MoE router layer analysis
-- [ ] Residual-aware DropLayer metric (understand skip connections)
+- [ ] Residual-aware DropLayer metric
 - [ ] Layer-to-layer CKA similarity matrix
-
-### v0.4.0
 - [ ] GNN support (PyG MessagePassing layers)
+
+### v0.5.0
 - [ ] Multi-modal model branch analysis (vision encoder + language decoder)
 - [ ] Wanda-style importance (weight x activation norm)
 - [ ] IG-based sensitivity scoring (IGU-LoRA style)
+- [ ] Integration with LLM training frameworks (Axolotl / LLaMA-Factory)
 - [ ] Export to ONNX / TensorRT optimization hints
 
 ### v1.0.0
@@ -306,97 +317,70 @@ MIT License. See [LICENSE](LICENSE).
 
 **先理解你的层，再优化它们。**
 
-Uni-Layer 是一个 PyTorch 工具库，通过 **7 大理论类别的 13 种指标** 为神经网络的每一层打分，告诉你哪些层最重要——从而实现更精准的剪枝、更高效的微调和更有效的蒸馏。
-
-### 核心优势
-
-- **唯一的层重要性通用评分库**：Captum 做输入归因，Torch-Pruning 做剪枝，TransformerLens 做机制解释——只有 Uni-Layer 把 13 种层重要性指标统一到一个 API 中
-- **与下游工具解耦**：通过 Bridge 模式无缝连接 Torch-Pruning / PEFT / 蒸馏框架
-- **兼容 HuggingFace**：自动处理 dict/dataclass 输出、attention_mask、labels 透传
+Uni-Layer 是一个 PyTorch 工具库，通过 **7 大理论类别的 13 种指标** 为神经网络的每一层打分。它自动生成可操作的洞察——告诉你哪些层冗余可以剪枝、哪些层重要应该用 LoRA 微调、哪些层是表征瓶颈。
 
 ### 快速开始
 
-```bash
-pip install uni-layer
-```
-
 ```python
-from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, CKA, BlockInfluence
+from uni_layer import LayerAnalyzer, LayerProfile
 
 analyzer = LayerAnalyzer(model, task_type='classification')
-contributions = analyzer.compute_metrics(
-    metrics=[GradientNorm(), CKA(), BlockInfluence()],
-    data_loader=train_loader,
-)
 
-# 按重要性排序
-for name, score in analyzer.rank_layers(contributions, 'gradient_norm'):
-    print(f"  {name}: {score:.4f}")
+# 一行分析（推荐大模型使用 preset）
+contributions = analyzer.compute_metrics(data_loader=loader, preset="llm_fast")
+
+# 自动生成洞察（纯 CPU，毫秒级）
+profile = LayerProfile(contributions, model_name="my-model")
+print(profile.summary())          # 一段话总结
+print(profile.redundant_layers)   # 可安全剪除的层
+print(profile.pruning_suggestion(0.3))  # 剪枝建议
+print(profile.lora_suggestion(8))       # LoRA 建议
 ```
 
-### 输出格式
+### Presets（预设）
 
-`compute_metrics()` 返回结构化字典：
-
-```python
-{
-  "layer_name": {
-    "layer_idx": 0,                  # 层索引
-    "layer_type": "linear",          # 层类型
-    "gradient_norm": 0.0193,         # 各指标值
-    "cka_score": 0.4161,
-    "block_influence": 1.0,
-    ...
-  },
-  ...
-}
-```
-
-`rank_layers()` 返回排序后的元组列表：
-
-```python
-[("layer_6", 0.1094), ("layer_4", 0.0624), ...]  # 降序
-```
-
-### 13 种指标
-
-| 类别 | 指标 | 衡量内容 |
+| 预设 | 包含指标 | 用途 |
 |---|---|---|
-| 优化几何 | GradientNorm, HessianTrace, FisherInformation | 层对损失曲面的影响 |
-| 谱方法 | CKA, EffectiveRank, NTKTrace | 表征相似性、多样性、核影响力 |
-| 信息论 | ActivationEntropy, MutualInformation | 信息含量与任务相关性 |
-| 表征结构 | JacobianRank, BlockInfluence | 表达能力与层冗余度 |
-| 鲁棒性 | DropLayerRobustness | 移除该层后的性能损失 |
-| 贝叶斯 | LaplacePosterior | 参数不确定性 |
-| 架构特定 | AttentionFlow | 注意力熵、头多样性 (Transformer) |
+| `"llm_fast"` | BlockInfluence, EffectiveRank, CKA, Entropy, AttentionFlow | 大模型快速扫描（秒级） |
+| `"llm_full"` | + GradientNorm, FisherInformation | 大模型完整分析（分钟级） |
+| `"quick"` | GradientNorm, BlockInfluence, EffectiveRank | 最快概览 |
+| `"full"` | 全部 13 指标 | 小模型深度分析 |
 
-### 集成桥
+### LayerProfile 自动分析
 
 ```python
-# Torch-Pruning：重要层少剪，不重要层多剪
-from uni_layer.integrations import TorchPruningBridge
-bridge = TorchPruningBridge(model, contributions)
-ratios = bridge.as_layer_pruning_ratios(target_sparsity=0.5)
+profile = LayerProfile(contributions)
 
-# PEFT：自动选择 LoRA 目标层和自适应秩
-from uni_layer.integrations import HuggingFacePEFTBridge
-bridge = HuggingFacePEFTBridge(model, contributions)
-config = bridge.recommend_lora_config_params()
+profile.redundant_layers        # 冗余层（可剪枝）
+profile.bottleneck_layers       # 瓶颈层（信息流受限）
+profile.consensus_ranking       # 多指标共识排名
+profile.depth_trends            # 深度趋势（U 形/递增/递减/平坦）
+profile.anomalies               # 统计异常层
+profile.pruning_suggestion(0.3) # 剪枝方案 + 预估加速
+profile.lora_suggestion(8)      # LoRA 目标层 + 自适应秩
+profile.summary()               # 自然语言摘要
+profile.to_dict()               # 完整 JSON 导出
+```
 
-# 蒸馏：教师-学生层配对和权重分配
-from uni_layer.integrations import DistillationBridge
-bridge = DistillationBridge(teacher, student, contributions)
-pairs = bridge.recommend_layer_pairs(top_k=4)
+### 已验证 20+ 个 HuggingFace 模型
+
+BERT / RoBERTa / DeBERTa / DistilBERT / SciBERT / MiniLM / GPT-2 / Pythia / BLOOM / Falcon / TinyLlama / Llama-3.2-3B / Qwen2.5-3B / ByT5 / DINOv2 / Wav2Vec2 / HuBERT — 全部通过。
+
+### CLI
+
+```bash
+uni-layer info              # 版本、PyTorch、CUDA、已安装指标
+uni-layer list-metrics      # 列出全部 13 种指标
+uni-layer analyze bert-base-uncased   # 分析 HuggingFace 模型
 ```
 
 ### 路线图
 
-**v0.3.0**：扩散模型支持 / Mamba-SSM / MoE 路由层分析 / 残差感知 DropLayer / 层间 CKA 矩阵
+**v0.4.0**：Diffusion/Mamba/MoE 支持 / 残差感知 DropLayer / 层间 CKA 矩阵 / GNN 支持
 
-**v0.4.0**：GNN 支持 / 多模态分支分析 / Wanda 重要性 / IG 灵敏度 / ONNX 导出
+**v0.5.0**：多模态分支分析 / Wanda 重要性 / IG 灵敏度 / LLM 训练框架集成
 
-**v1.0.0**：稳定 API / Web 可视化面板 / 分布式分析 / 预计算热门模型 / 学术论文
+**v1.0.0**：稳定 API / Web 可视化 / 分布式分析 / 预计算模型库 / 学术论文
 
 ### 许可证
 

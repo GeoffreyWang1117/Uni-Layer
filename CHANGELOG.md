@@ -1,166 +1,87 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+## [0.3.3] - 2026-03-25
 
-## [0.1.0] - 2025-01-XX
+### Fixed
+- Updated README: added LayerProfile, presets, CLI, verified model list
+- Updated Roadmap: moved unimplemented items from v0.3 to v0.4
+- Updated CHANGELOG: added all missing release notes (v0.2.0 - v0.3.2)
+- Synced README_CN.md with English README
+- Removed duplicate pytest.ini (use pyproject.toml only)
+
+## [0.3.2] - 2026-03-25
+
+### Fixed
+- Seq2Seq model support: auto-inject `decoder_input_ids` for T5/BART/ByT5
+- `_find_transformer_blocks` returns ALL block lists (encoder + decoder)
+- Verified on 20 HuggingFace models: BERT, RoBERTa, DeBERTa, DistilBERT,
+  SciBERT, MiniLM, GPT-2, Pythia, BLOOM, Falcon, TinyLlama, Llama-3.2-3B,
+  Qwen2.5-3B, ByT5, DINOv2, Wav2Vec2, HuBERT (all PASS)
+
+## [0.3.1] - 2026-03-25
+
+### Changed
+- Rewrote `get_model_layers()` with `_find_transformer_blocks()` auto-detection
+  - Recursively searches for transformer blocks at any nesting depth
+  - Pythia: 147 sub-layers -> 24 blocks (7x faster)
+  - Llama-3.2-3B: ~250 sub-layers -> 28 blocks (now completes in 7.5min)
+  - Qwen2.5-3B: ~280 sub-layers -> 36 blocks (3.8min)
+
+## [0.3.0] - 2026-03-25
 
 ### Added
+- **LayerProfile**: automatic insight extraction from contributions data
+  - Redundant layer detection (BlockInfluence/GradientNorm thresholds)
+  - Bottleneck layer detection (EffectiveRank drop analysis)
+  - Multi-metric consensus ranking (Borda count)
+  - Depth trend analysis (U-shaped/increasing/decreasing/flat)
+  - Statistical anomaly detection (z-score > 2)
+  - Layer clustering (high/medium/low contribution)
+  - Pruning suggestion with estimated speedup
+  - LoRA suggestion with adaptive rank allocation
+  - Natural language summary generation
+  - Full JSON export via `to_dict()`
+- **Metric presets**: `"llm_fast"`, `"llm_full"`, `"quick"`, `"full"`
+  - `analyzer.compute_metrics(preset="llm_fast")` for one-line usage
 
-#### Core Framework
-- Initial release of Uni-Layer framework
-- `LayerAnalyzer` main class for analyzing model layers
-- `LayerMetric` base class for implementing custom metrics
-- Automatic layer extraction for various architectures (Transformer, CNN, GNN, etc.)
-- Layer type identification system
-- Comprehensive hook management utilities
+## [0.2.1] - 2026-03-25
 
-#### Metrics - Optimization Geometry
-- `GradientNorm`: Gradient magnitude measurement
-- `HessianTrace`: Hessian trace approximation via Hutchinson estimator
-- `FisherInformation`: Empirical Fisher Information Matrix computation
+### Added
+- **CLI**: `uni-layer --help`, `info`, `list-metrics`, `analyze`
+- Console script entry point (`uni-layer` command after pip install)
+- 10 CLI tests
 
-#### Metrics - Spectral & Kernel Methods
-- `CKA`: Centered Kernel Alignment for representation similarity
-- `EffectiveRank`: Effective rank based on singular value entropy
-- `NTKTrace`: Neural Tangent Kernel trace approximation
+## [0.2.0] - 2026-03-25
 
-#### Metrics - Information Theory
-- `MutualInformation`: MI estimation between activations and targets
-- `ActivationEntropy`: Entropy of activation distributions
+### Added
+- 13 layer contribution metrics across 7 categories
+- **BlockInfluence** metric (ShortGPT ACL 2025)
+- HuggingFace model adaptation: dict/dataclass output, attention_mask, labels
+- Integration bridges: TorchPruningBridge, HuggingFacePEFTBridge, DistillationBridge
+- Output format schema (`uni_layer.core.schema`) with validation
+- Activation/gradient caching system
+- GitHub Actions CI (pytest + lint, Python 3.8-3.11)
+- PyPI publish workflow (trusted publishing)
+- 168 tests covering all metrics, HF adaptation, integrations, benchmarks
+- Examples: ResNet, ViT, BERT layer analysis
 
-#### Metrics - Representation Structure
-- `JacobianRank`: Jacobian matrix rank computation
+### Fixed
+- JacobianRank `hook_fn.__self__` AttributeError
+- Tuple output handling in activation cache hooks
 
-#### Metrics - Robustness
-- `DropLayerRobustness`: Layer importance via ablation studies
+### Changed
+- Consolidated packaging: pyproject.toml as single source of truth
 
-#### Visualization
-- `plot_layer_contributions`: Bar chart visualization
-- `plot_contribution_heatmap`: Multi-metric heatmap
-- `plot_depth_analysis`: Depth-based aggregation plots
-- `plot_metric_comparison`: Scatter plots comparing metrics
+## [0.1.0] - 2025-01
 
-#### Analysis Features
-- Layer ranking by any metric
-- Top-k layer selection
-- Pruning strategy generation
-- Knowledge distillation layer selection
-- PEFT adapter insertion point identification
-- Depth-based aggregation
-- Summary statistics computation
-
-#### Examples
-- Basic usage example with simple MLP
-- Transformer model analysis
-- Vision model (CNN) analysis
-
-#### Documentation
-- Comprehensive README
-- Quick Start Guide
-- Metrics documentation
-- Contributing guidelines
-- API reference
-
-#### Development
-- Setup.py configuration
-- Requirements.txt with core dependencies
-- pyproject.toml for modern packaging
-- .gitignore for Python projects
-- MIT License
-- GitHub-ready repository structure
-
-### Supported Model Families
-- BERT family (BERT, RoBERTa, ELECTRA)
-- GPT family (GPT, GPT-2, GPT-Neo)
-- Llama family (Llama, Mistral, Mixtral)
-- ViT family (Vision Transformer)
-- Swin Transformer family
-- CLIP family
-- ResNet family
-- ConvNeXt family
-- GCN family (Graph Convolutional Networks)
-- GAT family (Graph Attention Networks)
-- GraphSAGE family
-- DeepFM family (Recommendation)
-- DCN family (Deep & Cross Network)
-- DLRM family (Deep Learning Recommendation Model)
-- Whisper family (Speech)
-- Conformer family (Speech)
-- Generic MLP, CNN, RNN support
-
-### Features
-- Cross-architecture support (NLP, Vision, Speech, Graph, RecSys)
-- Plug-and-play API design
-- Efficient computation with configurable batch limits
-- GPU and CPU support
-- Progress bars for long computations
-- Graceful error handling
-- Comprehensive type hints
-- Extensive documentation
-
-### Performance
-- Optimized tensor operations
-- Memory-efficient implementations
-- Configurable computation budget via `num_batches`
-- Support for large models via activation checkpointing
-
----
-
-## [Unreleased]
-
-### Planned Features
-
-#### Metrics
-- Information Bottleneck (IB) metric
-- Laplace Posterior Variance
-- PAC-Bayes Layer Bound
-- Adversarial Layer Sensitivity
-- Attention Flow (Transformer-specific)
-- Patch Attribution (ViT-specific)
-- Token Mixing Influence
-- Path Integral Influence
-- Fractal Dimension
-
-#### Model Support
-- Diffusion model (UNet) specific support
-- MLP-Mixer specific support
-- More comprehensive RL model support
-- Mamba/State Space Model support
-
-#### Benchmark
-- LayerBench: Cross-architecture benchmark dataset
-- Standard evaluation protocols
-- Reproducible benchmarking scripts
-- Leaderboard system
-
-#### Downstream Applications
-- Automatic distillation pipeline
-- Intelligent pruning strategies
-- PEFT optimization toolkit
-- Model interpretation reports
-
-#### Visualization
-- Interactive web-based visualizations
-- Attention flow diagrams
-- Layer importance animations
-- Cross-model comparison plots
-
-#### Documentation
-- Video tutorials
-- Jupyter notebook examples
-- Research paper
-
----
-
-## Version History
-
-- **0.1.0** - Initial release (2025-01)
-
----
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute to this changelog.
+### Added
+- Initial release: LayerAnalyzer, LayerMetric base class
+- 10 metrics: GradientNorm, HessianTrace, FisherInformation, CKA,
+  EffectiveRank, NTKTrace, MutualInformation, ActivationEntropy,
+  JacobianRank, DropLayerRobustness
+- Automatic layer extraction for Transformer/CNN architectures
+- Visualization utilities
+- Basic examples and documentation
