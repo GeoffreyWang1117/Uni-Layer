@@ -10,7 +10,7 @@ foundation ("which layers matter and why?") that drives better optimization deci
 """
 
 # isort: skip_file
-__version__ = "0.3.7"
+__version__ = "0.3.8"
 __author__ = "Uni-Layer Team"
 
 # Core framework
