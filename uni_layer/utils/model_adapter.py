@@ -91,20 +91,21 @@ def compute_loss(
 
 
 # Cache for inspect.signature results — avoids 7us overhead per forward call
-_forward_params_cache: Dict[int, set] = {}
+# Keyed by class object (not id) to prevent stale entries after GC
+_forward_params_cache: Dict[type, set] = {}
 
 
 def _get_forward_params(model: nn.Module) -> set:
     """Get forward() parameter names with caching (52x faster than inspect each call)."""
-    key = id(model.__class__)
-    if key not in _forward_params_cache:
+    cls = model.__class__
+    if cls not in _forward_params_cache:
         try:
             import inspect
 
-            _forward_params_cache[key] = set(inspect.signature(model.forward).parameters.keys())
+            _forward_params_cache[cls] = set(inspect.signature(model.forward).parameters.keys())
         except (ValueError, TypeError):
-            _forward_params_cache[key] = set()
-    return _forward_params_cache[key]
+            _forward_params_cache[cls] = set()
+    return _forward_params_cache[cls]
 
 
 def model_forward(
