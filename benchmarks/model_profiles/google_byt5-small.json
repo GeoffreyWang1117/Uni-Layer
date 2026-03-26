@@ -1,0 +1,1093 @@
+{
+  "model": "google/byt5-small",
+  "num_layers": 36,
+  "metrics_used": [
+    "activation_entropy",
+    "activation_mean",
+    "activation_sparsity",
+    "activation_std",
+    "block_influence",
+    "block_similarity",
+    "cka_score",
+    "effective_rank",
+    "gradient_norm",
+    "gradient_norm_max",
+    "gradient_norm_min",
+    "gradient_norm_std",
+    "rank_ratio",
+    "stable_rank"
+  ],
+  "analysis": {
+    "redundant_layers": [
+      "encoder.block.3.layer.1",
+      "encoder.block.4.layer.0",
+      "decoder.block.1.layer.1",
+      "decoder.block.2.layer.1"
+    ],
+    "bottleneck_layers": [],
+    "consensus_ranking": [
+      {
+        "layer": "encoder.block.0.layer.0",
+        "rank": 1,
+        "consensus_score": 0.7297,
+        "scores": {
+          "activation_entropy": 2.099628,
+          "activation_mean": 0.159492,
+          "activation_sparsity": 0.00017,
+          "activation_std": 7.311054,
+          "block_influence": 0.488919,
+          "block_similarity": 0.511081,
+          "effective_rank": 1.000017,
+          "gradient_norm": 2561.236237,
+          "gradient_norm_max": 2717.740987,
+          "gradient_norm_min": 2404.731486,
+          "gradient_norm_std": 156.504751,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.1.layer.0",
+        "rank": 2,
+        "consensus_score": 0.7187,
+        "scores": {
+          "activation_entropy": 1.70705,
+          "activation_mean": -0.158624,
+          "activation_sparsity": 0.000198,
+          "activation_std": 6.893705,
+          "block_influence": 0.084344,
+          "block_similarity": 0.915656,
+          "effective_rank": 1.000022,
+          "gradient_norm": 1519.006601,
+          "gradient_norm_max": 2161.881445,
+          "gradient_norm_min": 876.131757,
+          "gradient_norm_std": 642.874844,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.3.layer.1",
+        "rank": 3,
+        "consensus_score": 0.7077,
+        "scores": {
+          "activation_entropy": 1.419802,
+          "activation_mean": -0.227842,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 14.232456,
+          "block_influence": 0.03121,
+          "block_similarity": 0.96879,
+          "effective_rank": 1.000025,
+          "gradient_norm": 1129.160254,
+          "gradient_norm_max": 1286.944756,
+          "gradient_norm_min": 971.375751,
+          "gradient_norm_std": 157.784502,
+          "rank_ratio": 0.062502,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.0.layer.1",
+        "rank": 4,
+        "consensus_score": 0.6176,
+        "scores": {
+          "activation_entropy": 1.784838,
+          "activation_mean": -0.015816,
+          "activation_sparsity": 0.000142,
+          "activation_std": 6.247072,
+          "block_influence": 0.4379,
+          "block_similarity": 0.5621,
+          "effective_rank": 1.000005,
+          "gradient_norm": 582.333686,
+          "gradient_norm_max": 657.951992,
+          "gradient_norm_min": 506.71538,
+          "gradient_norm_std": 75.618306,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.3.layer.0",
+        "rank": 5,
+        "consensus_score": 0.6176,
+        "scores": {
+          "activation_entropy": 1.458237,
+          "activation_mean": -0.178038,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 13.019132,
+          "block_influence": 0.08431,
+          "block_similarity": 0.91569,
+          "effective_rank": 1.000007,
+          "gradient_norm": 393.447803,
+          "gradient_norm_max": 485.62634,
+          "gradient_norm_min": 301.269267,
+          "gradient_norm_std": 92.178536,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.1.layer.1",
+        "rank": 6,
+        "consensus_score": 0.6066,
+        "scores": {
+          "activation_entropy": 1.506498,
+          "activation_mean": -0.169606,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 8.493075,
+          "block_influence": 0.115539,
+          "block_similarity": 0.884461,
+          "effective_rank": 1.000005,
+          "gradient_norm": 600.053005,
+          "gradient_norm_max": 727.895042,
+          "gradient_norm_min": 472.210968,
+          "gradient_norm_std": 127.842037,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.4.layer.0",
+        "rank": 7,
+        "consensus_score": 0.5912,
+        "scores": {
+          "activation_entropy": 1.303684,
+          "activation_mean": -0.153158,
+          "activation_sparsity": 0.000226,
+          "activation_std": 15.731648,
+          "block_influence": 0.03282,
+          "block_similarity": 0.96718,
+          "effective_rank": 1.000025,
+          "gradient_norm": 119.411901,
+          "gradient_norm_max": 124.266767,
+          "gradient_norm_min": 114.557036,
+          "gradient_norm_std": 4.854866,
+          "rank_ratio": 0.062502,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.4.layer.1",
+        "rank": 8,
+        "consensus_score": 0.5868,
+        "scores": {
+          "activation_entropy": 1.311726,
+          "activation_mean": -0.21568,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 17.153666,
+          "block_influence": 0.036424,
+          "block_similarity": 0.963576,
+          "effective_rank": 1.00002,
+          "gradient_norm": 113.693206,
+          "gradient_norm_max": 148.877622,
+          "gradient_norm_min": 78.50879,
+          "gradient_norm_std": 35.184416,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.2.layer.0",
+        "rank": 9,
+        "consensus_score": 0.5714,
+        "scores": {
+          "activation_entropy": 1.503571,
+          "activation_mean": -0.116774,
+          "activation_sparsity": 0.000113,
+          "activation_std": 9.753195,
+          "block_influence": 0.075222,
+          "block_similarity": 0.924778,
+          "effective_rank": 1.000002,
+          "gradient_norm": 783.237643,
+          "gradient_norm_max": 792.863301,
+          "gradient_norm_min": 773.611984,
+          "gradient_norm_std": 9.625658,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.10.layer.0",
+        "rank": 10,
+        "consensus_score": 0.5648,
+        "scores": {
+          "activation_entropy": 1.405062,
+          "activation_mean": -2.649692,
+          "activation_sparsity": 2.8e-05,
+          "activation_std": 136.552231,
+          "block_influence": 0.064896,
+          "block_similarity": 0.935104,
+          "effective_rank": 1.000031,
+          "gradient_norm": 45.179656,
+          "gradient_norm_max": 48.221163,
+          "gradient_norm_min": 42.13815,
+          "gradient_norm_std": 3.041507,
+          "rank_ratio": 0.062502,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.8.layer.0",
+        "rank": 11,
+        "consensus_score": 0.5451,
+        "scores": {
+          "activation_entropy": 1.319656,
+          "activation_mean": -1.114408,
+          "activation_sparsity": 2.8e-05,
+          "activation_std": 63.891121,
+          "block_influence": 0.082284,
+          "block_similarity": 0.917716,
+          "effective_rank": 1.000008,
+          "gradient_norm": 84.479046,
+          "gradient_norm_max": 118.544482,
+          "gradient_norm_min": 50.41361,
+          "gradient_norm_std": 34.065436,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.8.layer.1",
+        "rank": 12,
+        "consensus_score": 0.5407,
+        "scores": {
+          "activation_entropy": 1.357659,
+          "activation_mean": -1.352599,
+          "activation_std": 71.349998,
+          "block_influence": 0.074061,
+          "block_similarity": 0.925939,
+          "effective_rank": 1.000006,
+          "gradient_norm": 102.802136,
+          "gradient_norm_max": 166.375479,
+          "gradient_norm_min": 39.228794,
+          "gradient_norm_std": 63.573342,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.6.layer.0",
+        "rank": 13,
+        "consensus_score": 0.5363,
+        "scores": {
+          "activation_entropy": 1.244312,
+          "activation_mean": -0.435054,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 29.691368,
+          "block_influence": 0.078864,
+          "block_similarity": 0.921136,
+          "effective_rank": 1.000007,
+          "gradient_norm": 115.450969,
+          "gradient_norm_max": 124.808456,
+          "gradient_norm_min": 106.093482,
+          "gradient_norm_std": 9.357487,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.5.layer.1",
+        "rank": 14,
+        "consensus_score": 0.5363,
+        "scores": {
+          "activation_entropy": 1.308089,
+          "activation_mean": -0.423216,
+          "activation_sparsity": 5.7e-05,
+          "activation_std": 22.654524,
+          "block_influence": 0.077225,
+          "block_similarity": 0.922775,
+          "effective_rank": 1.000013,
+          "gradient_norm": 70.402907,
+          "gradient_norm_max": 99.441506,
+          "gradient_norm_min": 41.364307,
+          "gradient_norm_std": 29.0386,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.9.layer.0",
+        "rank": 15,
+        "consensus_score": 0.5187,
+        "scores": {
+          "activation_entropy": 1.384473,
+          "activation_mean": -1.860848,
+          "activation_sparsity": 2.8e-05,
+          "activation_std": 88.002678,
+          "block_influence": 0.091834,
+          "block_similarity": 0.908166,
+          "effective_rank": 1.000017,
+          "gradient_norm": 32.779302,
+          "gradient_norm_max": 40.895094,
+          "gradient_norm_min": 24.66351,
+          "gradient_norm_std": 8.115792,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.7.layer.1",
+        "rank": 16,
+        "consensus_score": 0.5077,
+        "scores": {
+          "activation_entropy": 1.31664,
+          "activation_mean": -0.714234,
+          "activation_sparsity": 5.7e-05,
+          "activation_std": 49.048416,
+          "block_influence": 0.059297,
+          "block_similarity": 0.940703,
+          "effective_rank": 1.000011,
+          "gradient_norm": 63.018694,
+          "gradient_norm_max": 66.71137,
+          "gradient_norm_min": 59.326018,
+          "gradient_norm_std": 3.692676,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.2.layer.1",
+        "rank": 17,
+        "consensus_score": 0.4989,
+        "scores": {
+          "activation_entropy": 1.468079,
+          "activation_mean": -0.172845,
+          "activation_sparsity": 8.5e-05,
+          "activation_std": 10.958303,
+          "block_influence": 0.047065,
+          "block_similarity": 0.952935,
+          "effective_rank": 1.000003,
+          "gradient_norm": 321.451162,
+          "gradient_norm_max": 322.796021,
+          "gradient_norm_min": 320.106304,
+          "gradient_norm_std": 1.344858,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.3.layer.2",
+        "rank": 18,
+        "consensus_score": 0.4989,
+        "scores": {
+          "activation_entropy": 1.055891,
+          "activation_mean": -3.655412,
+          "activation_std": 329.35791,
+          "block_influence": 0.132285,
+          "block_similarity": 0.867715,
+          "effective_rank": 1.000005,
+          "gradient_norm": 40.843347,
+          "gradient_norm_max": 50.758145,
+          "gradient_norm_min": 30.928549,
+          "gradient_norm_std": 9.914798,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.2.layer.0",
+        "rank": 19,
+        "consensus_score": 0.4945,
+        "scores": {
+          "activation_entropy": 1.364823,
+          "activation_mean": -0.05791,
+          "activation_std": 45.614761,
+          "block_influence": 0.088519,
+          "block_similarity": 0.911481,
+          "effective_rank": 1.000005,
+          "gradient_norm": 29.857811,
+          "gradient_norm_max": 39.033847,
+          "gradient_norm_min": 20.681774,
+          "gradient_norm_std": 9.176037,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.7.layer.0",
+        "rank": 20,
+        "consensus_score": 0.4923,
+        "scores": {
+          "activation_entropy": 1.257478,
+          "activation_mean": -0.726198,
+          "activation_std": 43.970776,
+          "block_influence": 0.05912,
+          "block_similarity": 0.94088,
+          "effective_rank": 1.000011,
+          "gradient_norm": 87.218109,
+          "gradient_norm_max": 110.990235,
+          "gradient_norm_min": 63.445984,
+          "gradient_norm_std": 23.772126,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.1.layer.2",
+        "rank": 21,
+        "consensus_score": 0.4879,
+        "scores": {
+          "activation_entropy": 1.497393,
+          "activation_mean": 0.441327,
+          "activation_std": 29.968594,
+          "block_influence": 0.11212,
+          "block_similarity": 0.88788,
+          "effective_rank": 1.000004,
+          "gradient_norm": 32.825431,
+          "gradient_norm_max": 37.93324,
+          "gradient_norm_min": 27.717622,
+          "gradient_norm_std": 5.107809,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.9.layer.1",
+        "rank": 22,
+        "consensus_score": 0.4813,
+        "scores": {
+          "activation_entropy": 1.446958,
+          "activation_mean": -2.52368,
+          "activation_std": 112.174873,
+          "block_influence": 0.08326,
+          "block_similarity": 0.91674,
+          "effective_rank": 1.000026,
+          "gradient_norm": 29.164671,
+          "gradient_norm_max": 30.043562,
+          "gradient_norm_min": 28.285779,
+          "gradient_norm_std": 0.878891,
+          "rank_ratio": 0.062502,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.5.layer.0",
+        "rank": 23,
+        "consensus_score": 0.4791,
+        "scores": {
+          "activation_entropy": 1.290088,
+          "activation_mean": -0.281395,
+          "activation_sparsity": 5.7e-05,
+          "activation_std": 19.609007,
+          "block_influence": 0.075881,
+          "block_similarity": 0.924119,
+          "effective_rank": 1.000001,
+          "gradient_norm": 158.837846,
+          "gradient_norm_max": 214.732086,
+          "gradient_norm_min": 102.943607,
+          "gradient_norm_std": 55.89424,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.11.layer.1",
+        "rank": 24,
+        "consensus_score": 0.4703,
+        "scores": {
+          "activation_entropy": 1.465857,
+          "activation_mean": -3.14022,
+          "activation_std": 251.329208,
+          "block_influence": 0.067313,
+          "block_similarity": 0.932687,
+          "effective_rank": 1.000012,
+          "gradient_norm": 20.02808,
+          "gradient_norm_max": 28.71716,
+          "gradient_norm_min": 11.339,
+          "gradient_norm_std": 8.68908,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.0.layer.2",
+        "rank": 25,
+        "consensus_score": 0.4505,
+        "scores": {
+          "activation_entropy": 1.388684,
+          "activation_mean": -0.094142,
+          "activation_std": 18.908718,
+          "block_influence": 0.104369,
+          "block_similarity": 0.895631,
+          "effective_rank": 1.000005,
+          "gradient_norm": 30.439381,
+          "gradient_norm_max": 38.542976,
+          "gradient_norm_min": 22.335786,
+          "gradient_norm_std": 8.103595,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.11.layer.0",
+        "rank": 26,
+        "consensus_score": 0.4264,
+        "scores": {
+          "activation_entropy": 1.340963,
+          "activation_mean": -2.820719,
+          "activation_sparsity": 2.8e-05,
+          "activation_std": 208.609329,
+          "block_influence": 0.052091,
+          "block_similarity": 0.947909,
+          "effective_rank": 1.000001,
+          "gradient_norm": 40.230081,
+          "gradient_norm_max": 47.450588,
+          "gradient_norm_min": 33.009574,
+          "gradient_norm_std": 7.220507,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.6.layer.1",
+        "rank": 27,
+        "consensus_score": 0.422,
+        "scores": {
+          "activation_entropy": 1.236254,
+          "activation_mean": -0.603574,
+          "activation_std": 35.358868,
+          "block_influence": 0.054662,
+          "block_similarity": 0.945338,
+          "effective_rank": 1.000001,
+          "gradient_norm": 147.413993,
+          "gradient_norm_max": 187.951641,
+          "gradient_norm_min": 106.876346,
+          "gradient_norm_std": 40.537647,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.1.layer.1",
+        "rank": 28,
+        "consensus_score": 0.411,
+        "scores": {
+          "activation_entropy": 0.982553,
+          "activation_mean": -0.050928,
+          "activation_sparsity": 0.001359,
+          "activation_std": 34.373859,
+          "block_influence": 0.031671,
+          "block_similarity": 0.968329,
+          "effective_rank": 1.000001,
+          "gradient_norm": 29.652848,
+          "gradient_norm_max": 33.307748,
+          "gradient_norm_min": 25.997948,
+          "gradient_norm_std": 3.6549,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.2.layer.2",
+        "rank": 29,
+        "consensus_score": 0.4,
+        "scores": {
+          "activation_entropy": 1.282865,
+          "activation_mean": -0.54639,
+          "activation_std": 66.920067,
+          "block_influence": 0.051698,
+          "block_similarity": 0.948302,
+          "effective_rank": 1.000002,
+          "gradient_norm": 30.06759,
+          "gradient_norm_max": 35.074295,
+          "gradient_norm_min": 25.060884,
+          "gradient_norm_std": 5.006706,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.3.layer.0",
+        "rank": 30,
+        "consensus_score": 0.389,
+        "scores": {
+          "activation_entropy": 1.360161,
+          "activation_mean": -1.023663,
+          "activation_std": 90.398811,
+          "block_influence": 0.122807,
+          "block_similarity": 0.877193,
+          "effective_rank": 1.000005,
+          "gradient_norm": 17.160976,
+          "gradient_norm_max": 20.907319,
+          "gradient_norm_min": 13.414632,
+          "gradient_norm_std": 3.746344,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.1.layer.0",
+        "rank": 31,
+        "consensus_score": 0.3824,
+        "scores": {
+          "activation_entropy": 1.339501,
+          "activation_mean": 0.064935,
+          "activation_std": 24.024384,
+          "block_influence": 0.057024,
+          "block_similarity": 0.942976,
+          "effective_rank": 1.000004,
+          "gradient_norm": 20.779024,
+          "gradient_norm_max": 27.358873,
+          "gradient_norm_min": 14.199176,
+          "gradient_norm_std": 6.579848,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.0.layer.1",
+        "rank": 32,
+        "consensus_score": 0.3714,
+        "scores": {
+          "activation_entropy": 1.16229,
+          "activation_mean": -0.000608,
+          "activation_std": 13.066349,
+          "block_influence": 0.101206,
+          "block_similarity": 0.898794,
+          "effective_rank": 1.000001,
+          "gradient_norm": 30.289906,
+          "gradient_norm_max": 38.45634,
+          "gradient_norm_min": 22.123471,
+          "gradient_norm_std": 8.166434,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "encoder.block.10.layer.1",
+        "rank": 33,
+        "consensus_score": 0.356,
+        "scores": {
+          "activation_entropy": 1.335666,
+          "activation_mean": -4.201287,
+          "activation_std": 180.20369,
+          "block_influence": 0.076916,
+          "block_similarity": 0.923084,
+          "effective_rank": 1.000009,
+          "gradient_norm": 18.244087,
+          "gradient_norm_max": 19.307786,
+          "gradient_norm_min": 17.180388,
+          "gradient_norm_std": 1.063699,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.0.layer.0",
+        "rank": 34,
+        "consensus_score": 0.3429,
+        "scores": {
+          "activation_entropy": 1.507564,
+          "activation_mean": -0.17572,
+          "activation_std": 8.971172,
+          "block_influence": 0.39515,
+          "block_similarity": 0.60485,
+          "effective_rank": 1.000001,
+          "gradient_norm": 23.795921,
+          "gradient_norm_max": 30.095891,
+          "gradient_norm_min": 17.49595,
+          "gradient_norm_std": 6.299971,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.2.layer.1",
+        "rank": 35,
+        "consensus_score": 0.3407,
+        "scores": {
+          "activation_entropy": 1.123048,
+          "activation_mean": -0.525069,
+          "activation_std": 62.307331,
+          "block_influence": 0.026792,
+          "block_similarity": 0.973208,
+          "effective_rank": 1.000004,
+          "gradient_norm": 19.305471,
+          "gradient_norm_max": 24.315279,
+          "gradient_norm_min": 14.295663,
+          "gradient_norm_std": 5.009808,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "decoder.block.3.layer.1",
+        "rank": 36,
+        "consensus_score": 0.3077,
+        "scores": {
+          "activation_entropy": 1.164916,
+          "activation_mean": -3.414028,
+          "activation_std": 137.105438,
+          "block_influence": 0.072056,
+          "block_similarity": 0.927944,
+          "effective_rank": 1.000003,
+          "gradient_norm": 6.625313,
+          "gradient_norm_max": 7.990812,
+          "gradient_norm_min": 5.259815,
+          "gradient_norm_std": 1.365499,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      }
+    ],
+    "depth_trends": {
+      "activation_entropy": {
+        "trend": "decreasing",
+        "early": 1.513441,
+        "middle": 1.342582,
+        "late": 1.269141
+      },
+      "activation_mean": {
+        "trend": "U-shaped",
+        "early": -0.162792,
+        "middle": -1.845209,
+        "late": -0.753134
+      },
+      "activation_sparsity": {
+        "trend": "U-shaped",
+        "early": 0.000116,
+        "middle": 2.1e-05,
+        "late": 0.000113
+      },
+      "activation_std": {
+        "trend": "inverted-U",
+        "early": 12.671403,
+        "middle": 105.848546,
+        "late": 71.75145
+      },
+      "block_influence": {
+        "trend": "U-shaped",
+        "early": 0.132238,
+        "middle": 0.070383,
+        "late": 0.107975
+      },
+      "block_similarity": {
+        "trend": "flat",
+        "early": 0.867762,
+        "middle": 0.929617,
+        "late": 0.892025
+      },
+      "effective_rank": {
+        "trend": "flat",
+        "early": 1.000012,
+        "middle": 1.000012,
+        "late": 1.000003
+      },
+      "gradient_norm": {
+        "trend": "decreasing",
+        "early": 696.022688,
+        "middle": 65.500736,
+        "late": 25.970251
+      },
+      "gradient_norm_max": {
+        "trend": "decreasing",
+        "early": 811.751489,
+        "middle": 82.501418,
+        "late": 31.98123
+      },
+      "gradient_norm_min": {
+        "trend": "decreasing",
+        "early": 580.293886,
+        "middle": 48.500053,
+        "late": 19.959272
+      },
+      "gradient_norm_std": {
+        "trend": "decreasing",
+        "early": 115.728801,
+        "middle": 17.000683,
+        "late": 6.010979
+      },
+      "rank_ratio": {
+        "trend": "flat",
+        "early": 0.062501,
+        "middle": 0.062501,
+        "late": 0.0625
+      },
+      "stable_rank": {
+        "trend": "flat",
+        "early": 1.0,
+        "middle": 1.0,
+        "late": 1.0
+      }
+    },
+    "anomalies": {
+      "encoder.block.0.layer.0": [
+        {
+          "metric": "activation_entropy",
+          "value": 2.099628,
+          "z_score": 3.67,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_influence",
+          "value": 0.488919,
+          "z_score": 3.66,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_similarity",
+          "value": 0.511081,
+          "z_score": -3.66,
+          "note": "unusually low"
+        },
+        {
+          "metric": "gradient_norm",
+          "value": 2561.236237,
+          "z_score": 4.51,
+          "note": "unusually high"
+        },
+        {
+          "metric": "gradient_norm_max",
+          "value": 2717.740987,
+          "z_score": 4.1,
+          "note": "unusually high"
+        },
+        {
+          "metric": "gradient_norm_min",
+          "value": 2404.731486,
+          "z_score": 4.91,
+          "note": "unusually high"
+        }
+      ],
+      "encoder.block.0.layer.1": [
+        {
+          "metric": "activation_entropy",
+          "value": 1.784838,
+          "z_score": 2.08,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_influence",
+          "value": 0.4379,
+          "z_score": 3.17,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_similarity",
+          "value": 0.5621,
+          "z_score": -3.17,
+          "note": "unusually low"
+        }
+      ],
+      "encoder.block.10.layer.1": [
+        {
+          "metric": "activation_mean",
+          "value": -4.201287,
+          "z_score": -2.68,
+          "note": "unusually low"
+        }
+      ],
+      "decoder.block.3.layer.1": [
+        {
+          "metric": "activation_mean",
+          "value": -3.414028,
+          "z_score": -2.04,
+          "note": "unusually low"
+        }
+      ],
+      "decoder.block.3.layer.2": [
+        {
+          "metric": "activation_mean",
+          "value": -3.655412,
+          "z_score": -2.24,
+          "note": "unusually low"
+        },
+        {
+          "metric": "activation_std",
+          "value": 329.35791,
+          "z_score": 3.56,
+          "note": "unusually high"
+        }
+      ],
+      "decoder.block.1.layer.1": [
+        {
+          "metric": "activation_sparsity",
+          "value": 0.001359,
+          "z_score": 4.16,
+          "note": "unusually high"
+        }
+      ],
+      "encoder.block.11.layer.1": [
+        {
+          "metric": "activation_std",
+          "value": 251.329208,
+          "z_score": 2.52,
+          "note": "unusually high"
+        }
+      ],
+      "decoder.block.0.layer.0": [
+        {
+          "metric": "block_influence",
+          "value": 0.39515,
+          "z_score": 2.77,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_similarity",
+          "value": 0.60485,
+          "z_score": -2.77,
+          "note": "unusually low"
+        }
+      ],
+      "encoder.block.9.layer.1": [
+        {
+          "metric": "effective_rank",
+          "value": 1.000026,
+          "z_score": 2.04,
+          "note": "unusually high"
+        },
+        {
+          "metric": "rank_ratio",
+          "value": 0.062502,
+          "z_score": 2.04,
+          "note": "unusually high"
+        }
+      ],
+      "encoder.block.10.layer.0": [
+        {
+          "metric": "effective_rank",
+          "value": 1.000031,
+          "z_score": 2.68,
+          "note": "unusually high"
+        },
+        {
+          "metric": "rank_ratio",
+          "value": 0.062502,
+          "z_score": 2.68,
+          "note": "unusually high"
+        }
+      ],
+      "encoder.block.1.layer.0": [
+        {
+          "metric": "gradient_norm",
+          "value": 1519.006601,
+          "z_score": 2.46,
+          "note": "unusually high"
+        },
+        {
+          "metric": "gradient_norm_max",
+          "value": 2161.881445,
+          "z_score": 3.15,
+          "note": "unusually high"
+        },
+        {
+          "metric": "gradient_norm_std",
+          "value": 642.874844,
+          "z_score": 5.46,
+          "note": "unusually high"
+        }
+      ]
+    },
+    "layer_clusters": {
+      "high_contribution": [
+        "encoder.block.0.layer.0",
+        "encoder.block.0.layer.1",
+        "encoder.block.1.layer.0",
+        "encoder.block.1.layer.1",
+        "encoder.block.2.layer.0",
+        "encoder.block.3.layer.0",
+        "encoder.block.3.layer.1",
+        "encoder.block.4.layer.0",
+        "encoder.block.4.layer.1",
+        "encoder.block.8.layer.0",
+        "encoder.block.8.layer.1",
+        "encoder.block.10.layer.0"
+      ],
+      "medium_contribution": [
+        "encoder.block.2.layer.1",
+        "encoder.block.5.layer.1",
+        "encoder.block.6.layer.0",
+        "encoder.block.7.layer.0",
+        "encoder.block.7.layer.1",
+        "encoder.block.9.layer.0",
+        "encoder.block.9.layer.1",
+        "encoder.block.11.layer.1",
+        "decoder.block.0.layer.2",
+        "decoder.block.1.layer.2",
+        "decoder.block.2.layer.0",
+        "decoder.block.3.layer.2"
+      ],
+      "low_contribution": [
+        "encoder.block.5.layer.0",
+        "encoder.block.6.layer.1",
+        "encoder.block.10.layer.1",
+        "encoder.block.11.layer.0",
+        "decoder.block.0.layer.0",
+        "decoder.block.0.layer.1",
+        "decoder.block.1.layer.0",
+        "decoder.block.1.layer.1",
+        "decoder.block.2.layer.1",
+        "decoder.block.2.layer.2",
+        "decoder.block.3.layer.0",
+        "decoder.block.3.layer.1"
+      ]
+    },
+    "suggestions": {
+      "pruning": {
+        "safe_to_remove": [
+          "decoder.block.3.layer.1",
+          "decoder.block.2.layer.1",
+          "decoder.block.0.layer.0",
+          "encoder.block.10.layer.1",
+          "decoder.block.0.layer.1",
+          "decoder.block.1.layer.0",
+          "decoder.block.3.layer.0",
+          "decoder.block.2.layer.2",
+          "decoder.block.1.layer.1",
+          "encoder.block.6.layer.1"
+        ],
+        "num_layers_removed": 10,
+        "estimated_speedup": "27.8%"
+      },
+      "lora": {
+        "target_layers": [
+          "encoder.block.0.layer.0",
+          "encoder.block.1.layer.0",
+          "encoder.block.3.layer.1",
+          "encoder.block.0.layer.1",
+          "encoder.block.3.layer.0",
+          "encoder.block.1.layer.1",
+          "encoder.block.4.layer.0",
+          "encoder.block.4.layer.1",
+          "encoder.block.2.layer.0",
+          "encoder.block.10.layer.0",
+          "encoder.block.8.layer.0",
+          "encoder.block.8.layer.1",
+          "encoder.block.6.layer.0",
+          "encoder.block.5.layer.1",
+          "encoder.block.9.layer.0",
+          "encoder.block.7.layer.1",
+          "encoder.block.2.layer.1",
+          "decoder.block.3.layer.2"
+        ],
+        "adaptive_ranks": {
+          "encoder.block.0.layer.0": 48,
+          "encoder.block.1.layer.0": 48,
+          "encoder.block.3.layer.1": 40,
+          "encoder.block.0.layer.1": 40,
+          "encoder.block.3.layer.0": 40,
+          "encoder.block.1.layer.1": 40,
+          "encoder.block.4.layer.0": 40,
+          "encoder.block.4.layer.1": 40,
+          "encoder.block.2.layer.0": 32,
+          "encoder.block.10.layer.0": 32,
+          "encoder.block.8.layer.0": 32,
+          "encoder.block.8.layer.1": 32,
+          "encoder.block.6.layer.0": 32,
+          "encoder.block.5.layer.1": 32,
+          "encoder.block.9.layer.0": 32,
+          "encoder.block.7.layer.1": 32,
+          "encoder.block.2.layer.1": 32,
+          "decoder.block.3.layer.2": 32
+        },
+        "total_lora_layers": 18
+      }
+    }
+  },
+  "summary": "google/byt5-small (36-layer model). analyzed with 14 metrics. decreasing gradient norm distribution. 4 redundant layers (encoder.block.3.layer.1, encoder.block.4.layer.0, decoder.block.1.layer.1...) safe to prune. most important: encoder.block.0.layer.0, least important: decoder.block.3.layer.1. 11 layers with anomalous metrics.",
+  "_meta": {
+    "elapsed_seconds": 23.44,
+    "device": "cuda",
+    "uni_layer_version": "0.3.6"
+  }
+}

@@ -1,0 +1,654 @@
+{
+  "model": "bigscience/bloom-560m",
+  "num_layers": 24,
+  "metrics_used": [
+    "activation_entropy",
+    "activation_mean",
+    "activation_sparsity",
+    "activation_std",
+    "block_influence",
+    "block_similarity",
+    "cka_score",
+    "effective_rank",
+    "rank_ratio",
+    "stable_rank"
+  ],
+  "analysis": {
+    "redundant_layers": [
+      "transformer.h.5",
+      "transformer.h.6",
+      "transformer.h.7",
+      "transformer.h.8",
+      "transformer.h.9",
+      "transformer.h.10",
+      "transformer.h.11",
+      "transformer.h.12",
+      "transformer.h.13",
+      "transformer.h.14",
+      "transformer.h.15",
+      "transformer.h.16",
+      "transformer.h.17",
+      "transformer.h.18",
+      "transformer.h.19",
+      "transformer.h.20",
+      "transformer.h.23"
+    ],
+    "bottleneck_layers": [],
+    "consensus_ranking": [
+      {
+        "layer": "transformer.h.20",
+        "rank": 1,
+        "consensus_score": 0.6473,
+        "scores": {
+          "activation_entropy": 0.065445,
+          "activation_mean": 0.075318,
+          "activation_sparsity": 0.002279,
+          "activation_std": 6.78064,
+          "block_influence": 0.002498,
+          "block_similarity": 0.997502,
+          "effective_rank": 1.000009,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.8",
+        "rank": 2,
+        "consensus_score": 0.6425,
+        "scores": {
+          "activation_entropy": 0.215703,
+          "activation_mean": 0.077496,
+          "activation_sparsity": 0.002604,
+          "activation_std": 6.562791,
+          "block_influence": 0.000105,
+          "block_similarity": 0.999895,
+          "effective_rank": 1.000022,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.11",
+        "rank": 3,
+        "consensus_score": 0.6232,
+        "scores": {
+          "activation_entropy": 0.424089,
+          "activation_mean": 0.076811,
+          "activation_sparsity": 0.00179,
+          "activation_std": 6.668053,
+          "block_influence": 0.000208,
+          "block_similarity": 0.999792,
+          "effective_rank": 1.000012,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.6",
+        "rank": 4,
+        "consensus_score": 0.6184,
+        "scores": {
+          "activation_entropy": 0.624258,
+          "activation_mean": 0.073105,
+          "activation_sparsity": 0.002767,
+          "activation_std": 6.12775,
+          "block_influence": 0.000275,
+          "block_similarity": 0.999725,
+          "effective_rank": 1.000044,
+          "rank_ratio": 0.062503,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.10",
+        "rank": 5,
+        "consensus_score": 0.6087,
+        "scores": {
+          "activation_entropy": 0.672804,
+          "activation_mean": 0.075676,
+          "activation_sparsity": 0.00179,
+          "activation_std": 6.646986,
+          "block_influence": 0.000155,
+          "block_similarity": 0.999845,
+          "effective_rank": 1.000012,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.7",
+        "rank": 6,
+        "consensus_score": 0.599,
+        "scores": {
+          "activation_entropy": 0.163385,
+          "activation_mean": 0.077741,
+          "activation_sparsity": 0.000977,
+          "activation_std": 6.534076,
+          "block_influence": 0.000162,
+          "block_similarity": 0.999838,
+          "effective_rank": 1.000045,
+          "rank_ratio": 0.062503,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.18",
+        "rank": 7,
+        "consensus_score": 0.5556,
+        "scores": {
+          "activation_entropy": 0.020616,
+          "activation_mean": 0.077016,
+          "activation_sparsity": 0.001139,
+          "activation_std": 6.761497,
+          "block_influence": 0.000377,
+          "block_similarity": 0.999623,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.19",
+        "rank": 8,
+        "consensus_score": 0.5459,
+        "scores": {
+          "activation_entropy": 0.024048,
+          "activation_mean": 0.078348,
+          "activation_sparsity": 0.000651,
+          "activation_std": 6.771914,
+          "block_influence": 0.000551,
+          "block_similarity": 0.999449,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.17",
+        "rank": 9,
+        "consensus_score": 0.5217,
+        "scores": {
+          "activation_entropy": 0.021563,
+          "activation_mean": 0.072594,
+          "activation_sparsity": 0.001628,
+          "activation_std": 6.755459,
+          "block_influence": 0.000346,
+          "block_similarity": 0.999654,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.14",
+        "rank": 10,
+        "consensus_score": 0.4976,
+        "scores": {
+          "activation_entropy": 0.037184,
+          "activation_mean": 0.074827,
+          "activation_sparsity": 0.001628,
+          "activation_std": 6.717894,
+          "block_influence": 0.000236,
+          "block_similarity": 0.999764,
+          "effective_rank": 1.000007,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.4",
+        "rank": 11,
+        "consensus_score": 0.4879,
+        "scores": {
+          "activation_entropy": 0.046946,
+          "activation_mean": 0.058812,
+          "activation_sparsity": 0.002441,
+          "activation_std": 4.936467,
+          "block_influence": 0.592283,
+          "block_similarity": 0.407717,
+          "effective_rank": 1.000015,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.1",
+        "rank": 12,
+        "consensus_score": 0.4783,
+        "scores": {
+          "activation_entropy": 1.131588,
+          "activation_mean": -3.4e-05,
+          "activation_sparsity": 0.00293,
+          "activation_std": 0.541721,
+          "block_influence": 0.062243,
+          "block_similarity": 0.937757,
+          "effective_rank": 1.000011,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.15",
+        "rank": 13,
+        "consensus_score": 0.4783,
+        "scores": {
+          "activation_entropy": 0.033007,
+          "activation_mean": 0.07188,
+          "activation_sparsity": 0.002441,
+          "activation_std": 6.732428,
+          "block_influence": 0.00028,
+          "block_similarity": 0.99972,
+          "effective_rank": 1.000003,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.12",
+        "rank": 14,
+        "consensus_score": 0.4734,
+        "scores": {
+          "activation_entropy": 0.136314,
+          "activation_mean": 0.076728,
+          "activation_sparsity": 0.002116,
+          "activation_std": 6.685027,
+          "block_influence": 0.000219,
+          "block_similarity": 0.999781,
+          "effective_rank": 1.000002,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.5",
+        "rank": 15,
+        "consensus_score": 0.4734,
+        "scores": {
+          "activation_entropy": 0.027698,
+          "activation_mean": 0.067221,
+          "activation_sparsity": 0.001302,
+          "activation_std": 5.59975,
+          "block_influence": 0.000393,
+          "block_similarity": 0.999607,
+          "effective_rank": 1.000028,
+          "rank_ratio": 0.062502,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.21",
+        "rank": 16,
+        "consensus_score": 0.4541,
+        "scores": {
+          "activation_entropy": 0.525365,
+          "activation_mean": 0.036596,
+          "activation_sparsity": 0.000814,
+          "activation_std": 5.427455,
+          "block_influence": 0.049238,
+          "block_similarity": 0.950762,
+          "effective_rank": 1.000007,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.0",
+        "rank": 17,
+        "consensus_score": 0.4348,
+        "scores": {
+          "activation_entropy": 1.075861,
+          "activation_mean": -0.003092,
+          "activation_sparsity": 0.003092,
+          "activation_std": 0.46705,
+          "block_influence": 0.291361,
+          "block_similarity": 0.708639,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.22",
+        "rank": 18,
+        "consensus_score": 0.4348,
+        "scores": {
+          "activation_entropy": 1.187038,
+          "activation_mean": -0.022987,
+          "activation_sparsity": 0.000814,
+          "activation_std": 3.080332,
+          "block_influence": 0.461955,
+          "block_similarity": 0.538045,
+          "effective_rank": 1.000006,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.2",
+        "rank": 19,
+        "consensus_score": 0.43,
+        "scores": {
+          "activation_entropy": 1.211244,
+          "activation_mean": 0.001671,
+          "activation_sparsity": 0.00293,
+          "activation_std": 0.56127,
+          "block_influence": 0.032767,
+          "block_similarity": 0.967233,
+          "effective_rank": 1.000006,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.13",
+        "rank": 20,
+        "consensus_score": 0.4251,
+        "scores": {
+          "activation_entropy": 0.054363,
+          "activation_mean": 0.075407,
+          "activation_sparsity": 0.001628,
+          "activation_std": 6.698382,
+          "block_influence": 0.000218,
+          "block_similarity": 0.999782,
+          "effective_rank": 1.0,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.3",
+        "rank": 21,
+        "consensus_score": 0.4155,
+        "scores": {
+          "activation_entropy": 1.205705,
+          "activation_mean": 0.001689,
+          "activation_sparsity": 0.00293,
+          "activation_std": 0.601793,
+          "block_influence": 0.054199,
+          "block_similarity": 0.945801,
+          "effective_rank": 1.000002,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.9",
+        "rank": 22,
+        "consensus_score": 0.4058,
+        "scores": {
+          "activation_entropy": 0.225079,
+          "activation_mean": 0.076399,
+          "activation_sparsity": 0.000651,
+          "activation_std": 6.574007,
+          "block_influence": 9.2e-05,
+          "block_similarity": 0.999908,
+          "effective_rank": 1.000003,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.23",
+        "rank": 23,
+        "consensus_score": 0.3913,
+        "scores": {
+          "activation_entropy": 1.135226,
+          "activation_mean": -0.041576,
+          "activation_sparsity": 0.000977,
+          "activation_std": 3.242335,
+          "block_influence": 0.011582,
+          "block_similarity": 0.988418,
+          "effective_rank": 1.0,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.h.16",
+        "rank": 24,
+        "consensus_score": 0.3575,
+        "scores": {
+          "activation_entropy": 0.023403,
+          "activation_mean": 0.073649,
+          "activation_sparsity": 0.000814,
+          "activation_std": 6.74087,
+          "block_influence": 0.000288,
+          "block_similarity": 0.999712,
+          "effective_rank": 1.0,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      }
+    ],
+    "depth_trends": {
+      "activation_entropy": {
+        "trend": "U-shaped",
+        "early": 0.685836,
+        "middle": 0.224818,
+        "late": 0.375338
+      },
+      "activation_mean": {
+        "trend": "inverted-U",
+        "early": 0.034639,
+        "middle": 0.075653,
+        "late": 0.04362
+      },
+      "activation_sparsity": {
+        "trend": "decreasing",
+        "early": 0.002421,
+        "middle": 0.001831,
+        "late": 0.001139
+      },
+      "activation_std": {
+        "trend": "inverted-U",
+        "early": 3.171235,
+        "middle": 6.660696,
+        "late": 5.695063
+      },
+      "block_influence": {
+        "trend": "U-shaped",
+        "early": 0.12921,
+        "middle": 0.000189,
+        "late": 0.065854
+      },
+      "block_similarity": {
+        "trend": "flat",
+        "early": 0.87079,
+        "middle": 0.999811,
+        "late": 0.934146
+      },
+      "effective_rank": {
+        "trend": "flat",
+        "early": 1.00002,
+        "middle": 1.000008,
+        "late": 1.000006
+      },
+      "rank_ratio": {
+        "trend": "flat",
+        "early": 0.062501,
+        "middle": 0.0625,
+        "late": 0.0625
+      },
+      "stable_rank": {
+        "trend": "flat",
+        "early": 1.0,
+        "middle": 1.0,
+        "late": 1.0
+      }
+    },
+    "anomalies": {
+      "transformer.h.23": [
+        {
+          "metric": "activation_mean",
+          "value": -0.041576,
+          "z_score": -2.47,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.0": [
+        {
+          "metric": "activation_std",
+          "value": 0.46705,
+          "z_score": -2.04,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.1": [
+        {
+          "metric": "activation_std",
+          "value": 0.541721,
+          "z_score": -2.01,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.2": [
+        {
+          "metric": "activation_std",
+          "value": 0.56127,
+          "z_score": -2.0,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.4": [
+        {
+          "metric": "block_influence",
+          "value": 0.592283,
+          "z_score": 3.46,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_similarity",
+          "value": 0.407717,
+          "z_score": -3.46,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.22": [
+        {
+          "metric": "block_influence",
+          "value": 0.461955,
+          "z_score": 2.6,
+          "note": "unusually high"
+        },
+        {
+          "metric": "block_similarity",
+          "value": 0.538045,
+          "z_score": -2.6,
+          "note": "unusually low"
+        }
+      ],
+      "transformer.h.6": [
+        {
+          "metric": "effective_rank",
+          "value": 1.000044,
+          "z_score": 2.78,
+          "note": "unusually high"
+        },
+        {
+          "metric": "rank_ratio",
+          "value": 0.062503,
+          "z_score": 2.78,
+          "note": "unusually high"
+        }
+      ],
+      "transformer.h.7": [
+        {
+          "metric": "effective_rank",
+          "value": 1.000045,
+          "z_score": 2.84,
+          "note": "unusually high"
+        },
+        {
+          "metric": "rank_ratio",
+          "value": 0.062503,
+          "z_score": 2.84,
+          "note": "unusually high"
+        }
+      ]
+    },
+    "layer_clusters": {
+      "high_contribution": [
+        "transformer.h.6",
+        "transformer.h.7",
+        "transformer.h.8",
+        "transformer.h.10",
+        "transformer.h.11",
+        "transformer.h.18",
+        "transformer.h.19",
+        "transformer.h.20"
+      ],
+      "medium_contribution": [
+        "transformer.h.4",
+        "transformer.h.12",
+        "transformer.h.14",
+        "transformer.h.15",
+        "transformer.h.17",
+        "transformer.h.21",
+        "transformer.h.22",
+        "transformer.h.23"
+      ],
+      "low_contribution": [
+        "transformer.h.0",
+        "transformer.h.1",
+        "transformer.h.2",
+        "transformer.h.3",
+        "transformer.h.5",
+        "transformer.h.9",
+        "transformer.h.13",
+        "transformer.h.16"
+      ]
+    },
+    "suggestions": {
+      "pruning": {
+        "safe_to_remove": [
+          "transformer.h.16",
+          "transformer.h.23",
+          "transformer.h.9",
+          "transformer.h.3",
+          "transformer.h.13",
+          "transformer.h.2",
+          "transformer.h.22"
+        ],
+        "num_layers_removed": 7,
+        "estimated_speedup": "29.2%"
+      },
+      "lora": {
+        "target_layers": [
+          "transformer.h.20",
+          "transformer.h.8",
+          "transformer.h.11",
+          "transformer.h.6",
+          "transformer.h.10",
+          "transformer.h.7",
+          "transformer.h.18",
+          "transformer.h.19",
+          "transformer.h.17",
+          "transformer.h.14",
+          "transformer.h.4",
+          "transformer.h.1"
+        ],
+        "adaptive_ranks": {
+          "transformer.h.20": 40,
+          "transformer.h.8": 40,
+          "transformer.h.11": 40,
+          "transformer.h.6": 40,
+          "transformer.h.10": 40,
+          "transformer.h.7": 40,
+          "transformer.h.18": 32,
+          "transformer.h.19": 32,
+          "transformer.h.17": 32,
+          "transformer.h.14": 32,
+          "transformer.h.4": 32,
+          "transformer.h.1": 32
+        },
+        "total_lora_layers": 12
+      }
+    }
+  },
+  "summary": "bigscience/bloom-560m (24-layer model). analyzed with 10 metrics. 17 redundant layers (transformer.h.5, transformer.h.6, transformer.h.7...) safe to prune. most important: transformer.h.20, least important: transformer.h.16. 8 layers with anomalous metrics.",
+  "_meta": {
+    "elapsed_seconds": 9.51,
+    "device": "cuda",
+    "uni_layer_version": "0.3.6"
+  }
+}

@@ -1,0 +1,234 @@
+{
+  "model": "distilbert-base-uncased",
+  "num_layers": 6,
+  "metrics_used": [
+    "activation_entropy",
+    "activation_mean",
+    "activation_sparsity",
+    "activation_std",
+    "block_influence",
+    "block_similarity",
+    "cka_score",
+    "effective_rank",
+    "rank_ratio",
+    "stable_rank"
+  ],
+  "analysis": {
+    "redundant_layers": [
+      "transformer.layer.3"
+    ],
+    "bottleneck_layers": [],
+    "consensus_ranking": [
+      {
+        "layer": "transformer.layer.2",
+        "rank": 1,
+        "consensus_score": 0.6222,
+        "scores": {
+          "activation_entropy": 1.851867,
+          "activation_mean": -0.025678,
+          "activation_sparsity": 0.003743,
+          "activation_std": 0.650092,
+          "block_influence": 0.093371,
+          "block_similarity": 0.906629,
+          "effective_rank": 1.000004,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.layer.3",
+        "rank": 2,
+        "consensus_score": 0.6,
+        "scores": {
+          "activation_entropy": 1.714473,
+          "activation_mean": -0.030171,
+          "activation_sparsity": 0.003906,
+          "activation_std": 0.64783,
+          "block_influence": 0.080234,
+          "block_similarity": 0.919766,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.layer.0",
+        "rank": 3,
+        "consensus_score": 0.5556,
+        "scores": {
+          "activation_entropy": 2.182243,
+          "activation_mean": -0.022831,
+          "activation_sparsity": 0.001628,
+          "activation_std": 0.567295,
+          "block_influence": 0.218934,
+          "block_similarity": 0.781066,
+          "effective_rank": 1.000008,
+          "rank_ratio": 0.062501,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.layer.1",
+        "rank": 4,
+        "consensus_score": 0.4222,
+        "scores": {
+          "activation_entropy": 1.812388,
+          "activation_mean": -0.025373,
+          "activation_sparsity": 0.003418,
+          "activation_std": 0.600522,
+          "block_influence": 0.153513,
+          "block_similarity": 0.846487,
+          "effective_rank": 1.000003,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.layer.4",
+        "rank": 5,
+        "consensus_score": 0.4,
+        "scores": {
+          "activation_entropy": 1.452255,
+          "activation_mean": -0.029739,
+          "activation_sparsity": 0.002767,
+          "activation_std": 0.640063,
+          "block_influence": 0.087524,
+          "block_similarity": 0.912476,
+          "effective_rank": 1.000003,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      },
+      {
+        "layer": "transformer.layer.5",
+        "rank": 6,
+        "consensus_score": 0.4,
+        "scores": {
+          "activation_entropy": 1.713286,
+          "activation_mean": -0.010792,
+          "activation_sparsity": 0.00293,
+          "activation_std": 0.424982,
+          "block_influence": 0.308603,
+          "block_similarity": 0.691397,
+          "effective_rank": 1.0,
+          "rank_ratio": 0.0625,
+          "stable_rank": 1.0
+        }
+      }
+    ],
+    "depth_trends": {
+      "activation_entropy": {
+        "trend": "decreasing",
+        "early": 1.997315,
+        "middle": 1.78317,
+        "late": 1.58277
+      },
+      "activation_mean": {
+        "trend": "U-shaped",
+        "early": -0.024102,
+        "middle": -0.027924,
+        "late": -0.020265
+      },
+      "activation_sparsity": {
+        "trend": "inverted-U",
+        "early": 0.002523,
+        "middle": 0.003825,
+        "late": 0.002848
+      },
+      "activation_std": {
+        "trend": "flat",
+        "early": 0.583908,
+        "middle": 0.648961,
+        "late": 0.532523
+      },
+      "block_influence": {
+        "trend": "U-shaped",
+        "early": 0.186223,
+        "middle": 0.086802,
+        "late": 0.198064
+      },
+      "block_similarity": {
+        "trend": "flat",
+        "early": 0.813777,
+        "middle": 0.913198,
+        "late": 0.801936
+      },
+      "effective_rank": {
+        "trend": "flat",
+        "early": 1.000006,
+        "middle": 1.000006,
+        "late": 1.000002
+      },
+      "rank_ratio": {
+        "trend": "flat",
+        "early": 0.0625,
+        "middle": 0.0625,
+        "late": 0.0625
+      },
+      "stable_rank": {
+        "trend": "flat",
+        "early": 1.0,
+        "middle": 1.0,
+        "late": 1.0
+      }
+    },
+    "anomalies": {
+      "transformer.layer.5": [
+        {
+          "metric": "activation_mean",
+          "value": -0.010792,
+          "z_score": 2.06,
+          "note": "unusually high"
+        },
+        {
+          "metric": "activation_std",
+          "value": 0.424982,
+          "z_score": -2.07,
+          "note": "unusually low"
+        }
+      ]
+    },
+    "layer_clusters": {
+      "high_contribution": [
+        "transformer.layer.2",
+        "transformer.layer.3"
+      ],
+      "medium_contribution": [
+        "transformer.layer.0",
+        "transformer.layer.5"
+      ],
+      "low_contribution": [
+        "transformer.layer.1",
+        "transformer.layer.4"
+      ]
+    },
+    "suggestions": {
+      "pruning": {
+        "safe_to_remove": [
+          "transformer.layer.5"
+        ],
+        "num_layers_removed": 1,
+        "estimated_speedup": "16.7%"
+      },
+      "lora": {
+        "target_layers": [
+          "transformer.layer.2",
+          "transformer.layer.3",
+          "transformer.layer.0"
+        ],
+        "adaptive_ranks": {
+          "transformer.layer.2": 40,
+          "transformer.layer.3": 40,
+          "transformer.layer.0": 32
+        },
+        "total_lora_layers": 3
+      }
+    }
+  },
+  "summary": "distilbert-base-uncased (6-layer model). analyzed with 10 metrics. 1 redundant layer (transformer.layer.3) safe to prune. most important: transformer.layer.2, least important: transformer.layer.5. 1 layer with anomalous metrics.",
+  "_meta": {
+    "elapsed_seconds": 1.2,
+    "device": "cuda",
+    "uni_layer_version": "0.3.6"
+  }
+}
