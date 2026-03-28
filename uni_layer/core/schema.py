@@ -51,12 +51,19 @@ Representation:
 Robustness:
   DropLayerRobustness -> droplayer_loss_increase, droplayer_loss_ratio
                         (+ droplayer_acc_decrease, droplayer_acc_ratio if metric="accuracy")
+  ResidualDropLayer   -> residual_droplayer_loss_increase, residual_droplayer_loss_ratio,
+                        residual_ratio, transform_norm_ratio
+                        (+ residual_droplayer_acc_decrease, residual_droplayer_acc_ratio if metric="accuracy")
 
 Bayesian:
   LaplacePosterior  -> laplace_posterior, laplace_posterior_std
 
 Architecture-Specific:
   AttentionFlow     -> attention_entropy, attention_max_weight, head_diversity, attention_distance
+  MoERouterAnalysis -> routing_entropy, expert_utilization, load_balance_score,
+                       top_expert_ratio, expert_overlap
+  DiffusionTimestepAnalysis -> timestep_sensitivity, mean_activation_norm,
+                              early_importance, late_importance, timestep_variance
 """
 
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -85,8 +92,11 @@ METRIC_PRIMARY_KEYS = {
     "jacobian_rank": "jacobian_rank",
     "block_influence": "block_influence",
     "droplayer_robustness": "droplayer_loss_increase",
+    "residual_droplayer": "residual_droplayer_loss_increase",
     "laplace_posterior": "laplace_posterior",
     "attention_flow": "attention_entropy",
+    "moe_router": "routing_entropy",
+    "diffusion_timestep": "timestep_sensitivity",
 }
 
 # All output keys per metric
@@ -117,12 +127,32 @@ METRIC_OUTPUT_KEYS = {
     ],
     "block_influence": ["block_influence", "block_similarity"],
     "droplayer_robustness": ["droplayer_loss_increase", "droplayer_loss_ratio"],
+    "residual_droplayer": [
+        "residual_droplayer_loss_increase",
+        "residual_droplayer_loss_ratio",
+        "residual_ratio",
+        "transform_norm_ratio",
+    ],
     "laplace_posterior": ["laplace_posterior", "laplace_posterior_std"],
     "attention_flow": [
         "attention_entropy",
         "attention_max_weight",
         "head_diversity",
         "attention_distance",
+    ],
+    "moe_router": [
+        "routing_entropy",
+        "expert_utilization",
+        "load_balance_score",
+        "top_expert_ratio",
+        "expert_overlap",
+    ],
+    "diffusion_timestep": [
+        "timestep_sensitivity",
+        "mean_activation_norm",
+        "early_importance",
+        "late_importance",
+        "timestep_variance",
     ],
 }
 

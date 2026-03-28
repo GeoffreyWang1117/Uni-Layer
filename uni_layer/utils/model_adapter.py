@@ -108,31 +108,54 @@ def _get_forward_params(model: nn.Module) -> set:
     return _forward_params_cache[cls]
 
 
+def _is_pyg_data(obj: Any) -> bool:
+    """Check if an object is a PyG Data/Batch without hard dependency."""
+    # Check MRO class names to handle dynamic subclasses like DataBatch
+    mro_names = {cls.__name__ for cls in type(obj).__mro__}
+    return bool(mro_names & {"Data", "Batch", "HeteroData", "BaseData"}) and hasattr(obj, "x")
+
+
 def model_forward(
     model: nn.Module,
-    inputs: torch.Tensor,
+    inputs: Any,
     targets: Optional[torch.Tensor] = None,
 ) -> Any:
     """
-    Run model forward pass with automatic HuggingFace argument detection.
+    Run model forward pass with automatic argument detection.
 
-    Handles models that need attention_mask, labels, or other kwargs.
+    Handles:
+    - Standard PyTorch models (tensor input)
+    - HuggingFace models (attention_mask, labels, decoder_input_ids)
+    - PyG GNN models (Data/Batch objects with x, edge_index, batch)
 
     Args:
         model: PyTorch model
-        inputs: Input tensor
+        inputs: Input tensor or PyG Data/Batch object
         targets: Optional targets (passed as 'labels' for HF models)
 
     Returns:
         Raw model output
     """
+    # Handle PyG graph data objects
+    if _is_pyg_data(inputs):
+        forward_params = _get_forward_params(model)
+        kwargs = {}
+        # Common PyG forward signatures: forward(x, edge_index, batch=None)
+        if "edge_index" in forward_params and hasattr(inputs, "edge_index"):
+            kwargs["edge_index"] = inputs.edge_index
+        if "batch" in forward_params and hasattr(inputs, "batch"):
+            kwargs["batch"] = inputs.batch
+        if "edge_attr" in forward_params and hasattr(inputs, "edge_attr"):
+            kwargs["edge_attr"] = inputs.edge_attr
+        return model(inputs.x, **kwargs)
+
     forward_params = _get_forward_params(model)
 
     kwargs = {}
 
     if "attention_mask" in forward_params:
         # Create attention mask (all ones = no masking)
-        if inputs.dim() >= 2:
+        if isinstance(inputs, torch.Tensor) and inputs.dim() >= 2:
             kwargs["attention_mask"] = torch.ones(
                 inputs.shape[:2], dtype=torch.long, device=inputs.device
             )

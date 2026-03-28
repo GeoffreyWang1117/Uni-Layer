@@ -108,6 +108,7 @@ class LayerAnalyzer:
             "JacobianRank",
             "BlockInfluence",
             "DropLayerRobustness",
+            "ResidualDropLayer",
             "LaplacePosterior",
             "AttentionFlow",
         ],
@@ -519,8 +520,11 @@ class LayerAnalyzer:
             "JacobianRank": m.JacobianRank,
             "BlockInfluence": m.BlockInfluence,
             "DropLayerRobustness": m.DropLayerRobustness,
+            "ResidualDropLayer": m.ResidualDropLayer,
             "LaplacePosterior": m.LaplacePosterior,
             "AttentionFlow": m.AttentionFlow,
+            "MoERouterAnalysis": m.MoERouterAnalysis,
+            "DiffusionTimestepAnalysis": m.DiffusionTimestepAnalysis,
         }
 
         instances = []
@@ -529,6 +533,47 @@ class LayerAnalyzer:
             if cls:
                 instances.append(cls(num_batches=num_batches))
         return instances
+
+    def compute_cka_matrix(
+        self,
+        data_loader: Optional[Any] = None,
+        num_batches: int = 10,
+        verbose: bool = True,
+        cka_batch_size: int = 256,
+    ):
+        """
+        Compute the layer-to-layer CKA similarity matrix.
+
+        Returns an N×N matrix where entry (i, j) is the CKA score between
+        layer i and layer j. Use this to identify redundant layers and
+        representation diversity across depth.
+
+        Args:
+            data_loader: DataLoader providing input data
+            num_batches: Number of batches for activation capture
+            verbose: Whether to print progress
+            cka_batch_size: Batch size for minibatch CKA (memory control)
+
+        Returns:
+            Tuple of (similarity_matrix, layer_names)
+
+        Example:
+            >>> matrix, names = analyzer.compute_cka_matrix(train_loader)
+            >>> # matrix[i][j] = CKA similarity between layer i and j
+        """
+        from uni_layer.core.cka_similarity import CKASimilarity
+
+        cka_sim = CKASimilarity(
+            model=self.model,
+            layers=self.layers,
+            cka_batch_size=cka_batch_size,
+            device=self.device,
+        )
+        return cka_sim.compute(
+            data_loader=data_loader,
+            num_batches=num_batches,
+            verbose=verbose,
+        )
 
     def __repr__(self) -> str:
         return (

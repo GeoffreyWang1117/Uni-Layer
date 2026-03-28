@@ -11,7 +11,7 @@ import torch.nn as nn
 
 def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]]:
     """
-    Search for ALL transformer block ModuleLists in a model.
+    Search for ALL block-level ModuleLists in a model.
 
     Handles arbitrary nesting and Seq2Seq models with both encoder and decoder:
     - model.encoder.layer / model.decoder.layer  (T5, BART)
@@ -20,6 +20,8 @@ def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]
     - model.transformer.h                        (GPT-2)
     - model.encoder.layer                        (BERT)
     - model.blocks                               (ViT)
+    - model.backbone.layers                      (Mamba)
+    - model.mixer.layers                         (Mamba-2)
 
     Returns:
         List of (dotted_path, module_list) tuples. Empty list if none found.
@@ -62,6 +64,48 @@ def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]
                     queue.append((f"{path}.{name}", child))
 
     return found
+
+
+def _find_gnn_layers(model: nn.Module) -> OrderedDict:
+    """
+    Find GNN (Graph Neural Network) layers in a model.
+
+    Detects PyG MessagePassing layers and common GNN conv naming patterns.
+    Returns layers at the conv level (GCNConv, GATConv, SAGEConv, etc.).
+
+    Returns:
+        OrderedDict of {name: module} for GNN layers. Empty if none found.
+    """
+    layers = OrderedDict()
+
+    # Try PyG MessagePassing detection
+    try:
+        from torch_geometric.nn import MessagePassing
+
+        for name, module in model.named_modules():
+            if isinstance(module, MessagePassing):
+                layers[name] = module
+    except ImportError:
+        pass
+
+    # If PyG not available, fall back to class name detection
+    if not layers:
+        gnn_keywords = (
+            "gcnconv",
+            "gatconv",
+            "sageconv",
+            "ginconv",
+            "graphconv",
+            "gatv2conv",
+            "transformerconv",
+            "edgeconv",
+        )
+        for name, module in model.named_modules():
+            class_lower = module.__class__.__name__.lower()
+            if any(kw in class_lower for kw in gnn_keywords):
+                layers[name] = module
+
+    return layers
 
 
 def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> OrderedDict:
@@ -113,6 +157,11 @@ def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> 
                 layers[f"{path}.{i}"] = block
         return layers
 
+    # Second: try GNN layer extraction (MessagePassing layers)
+    gnn_layers = _find_gnn_layers(model)
+    if gnn_layers:
+        return gnn_layers
+
     # Fallback: generic type-based extraction
     for name, module in model.named_modules():
         if any(isinstance(module, layer_type) for layer_type in include_types):
@@ -153,10 +202,48 @@ def identify_layer_type(layer: nn.Module) -> str:
     elif isinstance(layer, nn.MultiheadAttention):
         return "attention"
 
+    # Check for GNN / MessagePassing layers
+    try:
+        from torch_geometric.nn import MessagePassing
+
+        if isinstance(layer, MessagePassing):
+            class_lower_gnn = layer.__class__.__name__.lower()
+            if "gat" in class_lower_gnn:
+                return "gnn_attention"
+            elif "sage" in class_lower_gnn:
+                return "gnn_sage"
+            elif "gin" in class_lower_gnn:
+                return "gnn_isomorphism"
+            return "gnn_conv"
+    except ImportError:
+        pass
+
+    # Fallback GNN detection without PyG import
+    class_lower = layer.__class__.__name__.lower()
+    if any(k in class_lower for k in ("gcnconv", "gatconv", "sageconv", "ginconv", "graphconv")):
+        return "gnn_conv"
+
+    # Check for Mamba / SSM components
+    # Check for Diffusion model components
+    if any(k in class_lower for k in ("downblock", "upblock", "crossattn", "resnetblock")):
+        return "diffusion_block"
+    if "unet" in class_lower and len(list(layer.children())) >= 2:
+        return "diffusion_unet"
+
+    if any(k in class_lower for k in ("mamba", "ssm", "s4", "s6")):
+        if len(list(layer.children())) >= 2:
+            return "ssm_block"
+        return "ssm_layer"
+    if hasattr(layer, "A_log") or hasattr(layer, "D") and hasattr(layer, "dt_proj"):
+        return "ssm_layer"
+    if hasattr(layer, "mixer") and any(
+        k in getattr(layer.mixer, "__class__", type("")).__name__.lower() for k in ("mamba", "ssm")
+    ):
+        return "ssm_block"
+
     # Check for common layer types by attribute / class name
     if hasattr(layer, "self_attn") or hasattr(layer, "attn") or hasattr(layer, "attention"):
         return "transformer_block"
-    class_lower = layer.__class__.__name__.lower()
     if (
         any(k in class_lower for k in ("layer", "block", "decoder"))
         and len(list(layer.children())) >= 2
@@ -264,6 +351,12 @@ def get_architecture_family(model: nn.Module) -> str:
         return "gpt_family"
     elif any(x in model_name for x in ["llama", "mistral", "mixtral"]):
         return "llama_family"
+    elif any(x in model_name for x in ["mamba", "ssm", "s4"]):
+        return "mamba_family"
+    elif any(x in model_name for x in ["unet", "diffusion", "ddpm", "dit", "stable"]):
+        return "diffusion_family"
+    elif any(x in model_name for x in ["jknet", "graphunet"]):
+        return "gnn_family"
     elif any(x in model_name for x in ["vit", "vision_transformer"]):
         return "vit_family"
     elif any(x in model_name for x in ["swin"]):

@@ -3,6 +3,42 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.4.0] - 2026-03-28
+
+### Added
+- **CKA Similarity Matrix**: `CKASimilarity` class for computing N×N pairwise CKA between all layers
+  - `most_similar_pairs()`, `most_distinct_pairs()`, `redundant_layers()`, `layer_uniqueness()`
+  - `LayerAnalyzer.compute_cka_matrix()` convenience method
+  - Full JSON export via `to_dict()`
+- **Residual-aware DropLayer** (`ResidualDropLayer`): ablation metric that preserves residual stream
+  - Replaces output with input (identity skip) instead of zeroing
+  - `residual_ratio`: cosine similarity between input/output (quantifies residual contribution)
+  - `transform_norm_ratio`: relative magnitude of learned transform vs. residual
+- **MoE Router Analysis** (`MoERouterAnalysis`): routing behavior analysis for Mixture of Experts
+  - `routing_entropy`, `expert_utilization`, `load_balance_score`, `top_expert_ratio`, `expert_overlap`
+  - Auto-detects gate/router submodules and number of experts
+  - Gracefully skips non-MoE layers (returns None)
+- **Mamba / SSM architecture support**: layer extraction and metrics for state-space models
+  - `_find_transformer_blocks()` now detects Mamba block ModuleLists
+  - `identify_layer_type()` returns `"ssm_block"` / `"ssm_layer"` for Mamba components
+  - All activation-based metrics (BlockInfluence, EffectiveRank, CKA, etc.) verified on Mamba
+- **GNN support** (PyG MessagePassing layers):
+  - `_find_gnn_layers()` detects GCNConv, GATConv, SAGEConv, GINConv, etc.
+  - `model_forward()` handles PyG `Data`/`Batch` objects (auto-unpacks x, edge_index, batch)
+  - `identify_layer_type()` returns `"gnn_conv"`, `"gnn_attention"`, `"gnn_sage"`, etc.
+  - Metrics verified on GCN and GAT models
+- **Diffusion model support** (UNet timestep-aware analysis):
+  - `DiffusionTimestepAnalysis` metric: per-layer importance across denoising timesteps
+  - `timestep_sensitivity`, `early_importance`, `late_importance`, `mean_activation_norm`
+  - `get_diffusion_blocks()`: extracts down_blocks + mid_block + up_blocks from UNet
+  - Auto-detects timestep parameter name in model.forward()
+
+### Changed
+- Total metrics: 13 → 16 (added ResidualDropLayer, MoERouterAnalysis, DiffusionTimestepAnalysis)
+- `"full"` preset now includes `ResidualDropLayer`
+- Analyzer metric map updated with all new metrics
+- 111 tests passing (up from 205+)
+
 ## [0.3.3] - 2026-03-25
 
 ### Fixed

@@ -191,13 +191,13 @@ cd Uni-Layer && pip install -e ".[dev]"
 
 ## 路线图
 
-### v0.4.0（下一版本）
-- [ ] Diffusion 模型支持（UNet 时间步感知分析）
-- [ ] Mamba / SSM 架构支持
-- [ ] MoE 路由层分析
-- [ ] 残差感知 DropLayer 指标
-- [ ] 层间 CKA 相似度矩阵
-- [ ] GNN 支持（PyG MessagePassing 层）
+### v0.4.0（当前版本）
+- [x] Diffusion 模型支持（UNet 时间步感知分析）
+- [x] Mamba / SSM 架构支持
+- [x] MoE 路由层分析
+- [x] 残差感知 DropLayer 指标
+- [x] 层间 CKA 相似度矩阵
+- [x] GNN 支持（PyG MessagePassing 层）
 
 ### v0.5.0
 - [ ] 多模态模型分支分析（视觉编码器 + 语言解码器）
@@ -205,6 +205,30 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [ ] IG 灵敏度评分（IGU-LoRA 风格）
 - [ ] LLM 训练框架集成（Axolotl / LLaMA-Factory）
 - [ ] ONNX / TensorRT 优化提示导出
+
+### v0.6.0
+- [ ] 安全与红队分析指标（`security/` 类别）
+  - [ ] AdversarialSensitivity：逐层 FGSM/PGD 扰动敏感度
+  - [ ] ActivationAnomalyScore：基于激活模式异常的后门检测
+  - [ ] MembershipInferenceRisk：逐层梯度泄露风险评分
+  - [ ] AttentionPathTrace：对抗性注意力流 / Prompt 注入路径分析
+- [ ] 压缩安全审计（剪枝/量化前后的安全性退化量化）
+- [ ] `LayerProfile.security_report()` 自动化漏洞摘要
+
+### v0.7.0
+- [ ] LLM 推理 KV Cache 分析
+  - [ ] KV cache 冗余检测（跨层 / 跨头相似度）
+  - [ ] KV cache 压缩建议（逐层预算分配）
+  - [ ] Cache 信息泄露评分
+- [ ] 推理框架集成（SGLang / vLLM）
+  - [ ] 基于推理引擎 hook 的运行时层分析
+  - [ ] 服务感知的重要性评分（延迟 vs. 质量权衡）
+- [ ] 对抗性 Prompt 攻击路径分析
+  - [ ] 逐层对越狱 / 注入 prompt 的脆弱性
+  - [ ] 跨解码步的注意力劫持检测
+- [ ] 推理攻击面分析
+  - [ ] 逐层模型反演风险
+  - [ ] 嵌入提取漏洞评分
 
 ### v1.0.0
 - [ ] 稳定 API，完全向后兼容

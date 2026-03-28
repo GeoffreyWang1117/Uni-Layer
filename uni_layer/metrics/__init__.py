@@ -3,6 +3,11 @@
 # Optimization metrics
 # Architecture-specific metrics
 from uni_layer.metrics.architecture_specific.attention_flow import AttentionFlow
+from uni_layer.metrics.architecture_specific.diffusion_timestep import (
+    DiffusionTimestepAnalysis,
+    get_diffusion_blocks,
+)
+from uni_layer.metrics.architecture_specific.moe_router import MoERouterAnalysis
 
 # Bayesian metrics
 from uni_layer.metrics.bayesian.laplace_posterior import LaplacePosterior
@@ -20,6 +25,7 @@ from uni_layer.metrics.representation.jacobian_rank import JacobianRank
 
 # Robustness metrics
 from uni_layer.metrics.robustness.droplayer import DropLayerRobustness
+from uni_layer.metrics.robustness.residual_droplayer import ResidualDropLayer
 
 # Spectral metrics
 from uni_layer.metrics.spectral.cka import CKA
@@ -43,8 +49,12 @@ __all__ = [
     "BlockInfluence",
     # Robustness
     "DropLayerRobustness",
+    "ResidualDropLayer",
     # Bayesian
     "LaplacePosterior",
     # Architecture-Specific
     "AttentionFlow",
+    "DiffusionTimestepAnalysis",
+    "MoERouterAnalysis",
+    "get_diffusion_blocks",
 ]
