@@ -12,10 +12,9 @@ Automatically detects common multi-modal architectures:
 """
 
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 import numpy as np
-import torch
 import torch.nn as nn
 
 from uni_layer.utils.layer_utils import get_model_layers

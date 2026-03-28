@@ -13,7 +13,6 @@ Reference:
 
 from typing import Any, Dict, List, Optional
 
-import numpy as np
 import torch
 import torch.nn as nn
 
@@ -97,7 +96,7 @@ class ActivationAnomalyScore(LayerMetric):
 
         # Per-neuron statistics (mean across samples)
         neuron_means = all_acts.mean(dim=0)  # (features,)
-        neuron_stds = all_acts.std(dim=0) + 1e-10
+        all_acts.std(dim=0) + 1e-10
 
         # Global activation distribution
         flat = all_acts.flatten()

@@ -6,7 +6,7 @@ quantization, distillation) to quantify safety degradation. Identifies
 layers where compression increases vulnerability.
 """
 
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List
 
 import numpy as np
 

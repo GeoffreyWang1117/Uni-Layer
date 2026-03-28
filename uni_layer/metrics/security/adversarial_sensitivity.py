@@ -10,7 +10,7 @@ Reference:
     Goodfellow et al., "Explaining and Harnessing Adversarial Examples", ICLR 2015
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch

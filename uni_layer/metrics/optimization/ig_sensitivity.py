@@ -14,9 +14,8 @@ Reference:
     Guo et al., "IGU-LoRA: Integrated Gradient-based Uncertainty for LoRA", 2024
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
-import numpy as np
 import torch
 import torch.nn as nn
 

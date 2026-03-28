@@ -12,7 +12,7 @@ Reference:
     Nasr et al., "Comprehensive Privacy Analysis of Deep Learning", IEEE S&P 2019
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 import torch
@@ -113,8 +113,8 @@ class MembershipInferenceRisk(LayerMetric):
             }
 
         grad_norms = np.array(grad_norms)
-        grad_means = np.array(all_grad_means)
-        grad_stds = np.array(all_grad_stds)
+        np.array(all_grad_means)
+        np.array(all_grad_stds)
 
         # 1. Gradient entropy: approximate via histogram of gradient norms
         #    Higher entropy = more diverse gradient info = higher leakage risk

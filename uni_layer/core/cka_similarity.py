@@ -20,7 +20,6 @@ import torch.nn as nn
 from uni_layer.core.cache import ActivationCache, BatchCache
 from uni_layer.utils.fast_math import _standard_cka, minibatch_cka
 from uni_layer.utils.layer_utils import get_model_layers
-from uni_layer.utils.model_adapter import model_forward
 
 
 class CKASimilarity:

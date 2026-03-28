@@ -11,10 +11,8 @@ These hints can be used to guide ONNX graph optimization and
 TensorRT engine building for maximum inference throughput.
 """
 
-from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
-import numpy as np
 import torch.nn as nn
 
 
