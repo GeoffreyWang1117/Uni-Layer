@@ -12,6 +12,7 @@ Each integration converts Uni-Layer's contribution analysis into the format
 expected by the target library, enabling metrics-driven optimization.
 """
 
+from uni_layer.integrations.compression_safety import CompressionSafetyAudit
 from uni_layer.integrations.distillation import DistillationBridge
 from uni_layer.integrations.export_hints import ExportHintsBridge
 from uni_layer.integrations.huggingface_peft import HuggingFacePEFTBridge
@@ -22,6 +23,7 @@ __all__ = [
     "TorchPruningBridge",
     "HuggingFacePEFTBridge",
     "DistillationBridge",
+    "CompressionSafetyAudit",
     "ExportHintsBridge",
     "AxolotlConfigBridge",
     "LLaMAFactoryConfigBridge",

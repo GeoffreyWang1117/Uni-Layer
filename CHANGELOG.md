@@ -3,6 +3,28 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.0] - 2026-03-28
+
+### Added
+- **Security & Red-Team metrics** (`security/` category — 4 new metrics):
+  - `AdversarialSensitivity`: per-layer FGSM perturbation sensitivity
+    (`adv_sensitivity`, `adv_amplification`, `adv_directional_change`)
+  - `ActivationAnomalyScore`: backdoor detection via activation statistics
+    (`activation_skewness`, `activation_kurtosis`, `neuron_outlier_ratio`, `activation_bimodality`)
+  - `MembershipInferenceRisk`: gradient leakage risk scoring
+    (`gradient_entropy`, `gradient_snr`, `gradient_memorization`, `mi_risk_score`)
+  - `AttentionPathTrace`: prompt injection vulnerability analysis
+    (`attention_concentration`, `attention_manipulability`, `attention_persistence`, `injection_vulnerability`)
+- **CompressionSafetyAudit**: compare security metrics pre/post compression
+  - `per_layer_delta()`, `degraded_layers()`, `audit()` with recommendations
+- **LayerProfile.security_report()**: automated vulnerability summary
+  - Composite risk scoring per layer across all security categories
+  - Top-risk layer identification and natural language summary
+
+### Changed
+- Total metrics: 18 → 22 (added 4 security metrics)
+- Total integration bridges: 6 → 7 (added CompressionSafetyAudit)
+
 ## [0.5.0] - 2026-03-28
 
 ### Added

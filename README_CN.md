@@ -199,21 +199,21 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] 层间 CKA 相似度矩阵
 - [x] GNN 支持（PyG MessagePassing 层）
 
-### v0.5.0（当前版本）
+### v0.5.0
 - [x] 多模态模型分支分析（视觉编码器 + 语言解码器）
 - [x] Wanda 风格重要性（权重 x 激活范数）
 - [x] IG 灵敏度评分（IGU-LoRA 风格）
 - [x] LLM 训练框架集成（Axolotl / LLaMA-Factory）
 - [x] ONNX / TensorRT 优化提示导出
 
-### v0.6.0
-- [ ] 安全与红队分析指标（`security/` 类别）
-  - [ ] AdversarialSensitivity：逐层 FGSM/PGD 扰动敏感度
-  - [ ] ActivationAnomalyScore：基于激活模式异常的后门检测
-  - [ ] MembershipInferenceRisk：逐层梯度泄露风险评分
-  - [ ] AttentionPathTrace：对抗性注意力流 / Prompt 注入路径分析
-- [ ] 压缩安全审计（剪枝/量化前后的安全性退化量化）
-- [ ] `LayerProfile.security_report()` 自动化漏洞摘要
+### v0.6.0（当前版本）
+- [x] 安全与红队分析指标（`security/` 类别）
+  - [x] AdversarialSensitivity：逐层 FGSM/PGD 扰动敏感度
+  - [x] ActivationAnomalyScore：基于激活模式异常的后门检测
+  - [x] MembershipInferenceRisk：逐层梯度泄露风险评分
+  - [x] AttentionPathTrace：对抗性注意力流 / Prompt 注入路径分析
+- [x] 压缩安全审计（剪枝/量化前后的安全性退化量化）
+- [x] `LayerProfile.security_report()` 自动化漏洞摘要
 
 ### v0.7.0
 - [ ] LLM 推理 KV Cache 分析

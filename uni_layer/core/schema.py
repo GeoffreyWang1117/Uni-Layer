@@ -60,6 +60,12 @@ Robustness:
 Bayesian:
   LaplacePosterior  -> laplace_posterior, laplace_posterior_std
 
+Security:
+  AdversarialSensitivity -> adv_sensitivity, adv_amplification, adv_directional_change
+  ActivationAnomalyScore -> activation_skewness, activation_kurtosis, neuron_outlier_ratio, activation_bimodality
+  MembershipInferenceRisk -> gradient_entropy, gradient_snr, gradient_memorization, mi_risk_score
+  AttentionPathTrace     -> attention_concentration, attention_manipulability, attention_persistence, injection_vulnerability
+
 Architecture-Specific:
   AttentionFlow     -> attention_entropy, attention_max_weight, head_diversity, attention_distance
   MoERouterAnalysis -> routing_entropy, expert_utilization, load_balance_score,
@@ -98,6 +104,10 @@ METRIC_PRIMARY_KEYS = {
     "droplayer_robustness": "droplayer_loss_increase",
     "residual_droplayer": "residual_droplayer_loss_increase",
     "laplace_posterior": "laplace_posterior",
+    "adversarial_sensitivity": "adv_sensitivity",
+    "activation_anomaly": "activation_skewness",
+    "membership_inference": "mi_risk_score",
+    "attention_path_trace": "injection_vulnerability",
     "attention_flow": "attention_entropy",
     "moe_router": "routing_entropy",
     "diffusion_timestep": "timestep_sensitivity",
@@ -140,6 +150,29 @@ METRIC_OUTPUT_KEYS = {
         "transform_norm_ratio",
     ],
     "laplace_posterior": ["laplace_posterior", "laplace_posterior_std"],
+    "adversarial_sensitivity": [
+        "adv_sensitivity",
+        "adv_amplification",
+        "adv_directional_change",
+    ],
+    "activation_anomaly": [
+        "activation_skewness",
+        "activation_kurtosis",
+        "neuron_outlier_ratio",
+        "activation_bimodality",
+    ],
+    "membership_inference": [
+        "gradient_entropy",
+        "gradient_snr",
+        "gradient_memorization",
+        "mi_risk_score",
+    ],
+    "attention_path_trace": [
+        "attention_concentration",
+        "attention_manipulability",
+        "attention_persistence",
+        "injection_vulnerability",
+    ],
     "attention_flow": [
         "attention_entropy",
         "attention_max_weight",

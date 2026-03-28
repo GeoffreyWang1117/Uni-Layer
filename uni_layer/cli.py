@@ -275,7 +275,7 @@ def main():
         epilog="""\
 Examples:
   uni-layer info                              Show version and environment
-  uni-layer list-metrics                      List all 13 metrics
+  uni-layer list-metrics                      List all metrics
   uni-layer list-metrics --format json        Output as JSON
   uni-layer analyze bert-base-uncased         Analyze a HuggingFace model
   uni-layer analyze bert-base-uncased -m GradientNorm,BlockInfluence -o results.json

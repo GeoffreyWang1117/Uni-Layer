@@ -276,21 +276,21 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] Layer-to-layer CKA similarity matrix
 - [x] GNN support (PyG MessagePassing layers)
 
-### v0.5.0 (Current)
+### v0.5.0
 - [x] Multi-modal model branch analysis (vision encoder + language decoder)
 - [x] Wanda-style importance (weight x activation norm)
 - [x] IG-based sensitivity scoring (IGU-LoRA style)
 - [x] Integration with LLM training frameworks (Axolotl / LLaMA-Factory)
 - [x] Export to ONNX / TensorRT optimization hints
 
-### v0.6.0
-- [ ] Security & red-team analysis metrics (`security/` category)
-  - [ ] AdversarialSensitivity: per-layer FGSM/PGD perturbation sensitivity
-  - [ ] ActivationAnomalyScore: backdoor detection via activation pattern analysis
-  - [ ] MembershipInferenceRisk: per-layer gradient leakage scoring
-  - [ ] AttentionPathTrace: adversarial attention flow / prompt injection path analysis
-- [ ] Compression safety audit (safety degradation pre/post pruning/quantization)
-- [ ] `LayerProfile.security_report()` for automated vulnerability summary
+### v0.6.0 (Current)
+- [x] Security & red-team analysis metrics (`security/` category)
+  - [x] AdversarialSensitivity: per-layer FGSM/PGD perturbation sensitivity
+  - [x] ActivationAnomalyScore: backdoor detection via activation pattern analysis
+  - [x] MembershipInferenceRisk: per-layer gradient leakage scoring
+  - [x] AttentionPathTrace: adversarial attention flow / prompt injection path analysis
+- [x] Compression safety audit (safety degradation pre/post pruning/quantization)
+- [x] `LayerProfile.security_report()` for automated vulnerability summary
 
 ### v0.7.0
 - [ ] KV Cache analysis for LLM inference

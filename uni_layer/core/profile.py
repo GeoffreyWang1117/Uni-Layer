@@ -651,6 +651,114 @@ class LayerProfile:
     # Serialization
     # ------------------------------------------------------------------
 
+    def security_report(self) -> Dict[str, Any]:
+        """
+        Generate automated security vulnerability summary.
+
+        Analyzes security metrics (if present) across all layers to identify:
+        - Most adversarially sensitive layers
+        - Layers with anomalous activations (potential backdoors)
+        - Highest membership inference risk layers
+        - Most vulnerable to attention hijacking
+
+        Returns empty sections if security metrics were not computed.
+        """
+        security_keys = {
+            "adversarial": ["adv_sensitivity", "adv_amplification", "adv_directional_change"],
+            "anomaly": [
+                "activation_skewness",
+                "activation_kurtosis",
+                "neuron_outlier_ratio",
+                "activation_bimodality",
+            ],
+            "privacy": [
+                "gradient_entropy",
+                "gradient_snr",
+                "gradient_memorization",
+                "mi_risk_score",
+            ],
+            "injection": [
+                "attention_concentration",
+                "attention_manipulability",
+                "injection_vulnerability",
+            ],
+        }
+
+        report = {"categories_found": [], "layer_risks": {}, "top_risks": [], "summary": ""}
+
+        # Check which security categories have data
+        for category, keys in security_keys.items():
+            has_data = False
+            for layer_name, metrics in self.contributions.items():
+                if any(metrics.get(k) is not None for k in keys):
+                    has_data = True
+                    break
+            if has_data:
+                report["categories_found"].append(category)
+
+        if not report["categories_found"]:
+            report["summary"] = (
+                "No security metrics computed. Run analysis with security metrics to generate a vulnerability report."
+            )
+            return report
+
+        # Compute per-layer composite risk score
+        for layer_name, metrics in self.contributions.items():
+            risk_scores = []
+
+            # Adversarial risk
+            adv = metrics.get("adv_sensitivity")
+            if adv is not None:
+                risk_scores.append(min(1.0, adv))
+
+            # Anomaly risk
+            outlier = metrics.get("neuron_outlier_ratio")
+            bimodal = metrics.get("activation_bimodality")
+            if outlier is not None:
+                risk_scores.append(outlier)
+            if bimodal is not None and bimodal > 0.555:
+                risk_scores.append(min(1.0, bimodal))
+
+            # Privacy risk
+            mi = metrics.get("mi_risk_score")
+            if mi is not None:
+                risk_scores.append(min(1.0, mi))
+
+            # Injection risk
+            inj = metrics.get("injection_vulnerability")
+            if inj is not None:
+                risk_scores.append(min(1.0, inj))
+
+            if risk_scores:
+                report["layer_risks"][layer_name] = {
+                    "composite_risk": float(np.mean(risk_scores)),
+                    "max_risk": float(max(risk_scores)),
+                    "num_risk_signals": len(risk_scores),
+                }
+
+        # Top risky layers
+        if report["layer_risks"]:
+            sorted_layers = sorted(
+                report["layer_risks"].items(),
+                key=lambda x: x[1]["composite_risk"],
+                reverse=True,
+            )
+            report["top_risks"] = [{"layer": name, **risk} for name, risk in sorted_layers[:5]]
+
+            # Summary text
+            avg_risk = np.mean([v["composite_risk"] for v in report["layer_risks"].values()])
+            max_risk_layer = sorted_layers[0][0]
+            max_risk_val = sorted_layers[0][1]["composite_risk"]
+
+            cats = ", ".join(report["categories_found"])
+            report["summary"] = (
+                f"Security analysis across {len(report['layer_risks'])} layers "
+                f"({cats}). Average risk: {avg_risk:.3f}. "
+                f"Highest risk layer: {max_risk_layer} ({max_risk_val:.3f})."
+            )
+
+        return report
+
     def to_dict(self) -> Dict[str, Any]:
         """Export full profile as JSON-serializable dict."""
         return {
