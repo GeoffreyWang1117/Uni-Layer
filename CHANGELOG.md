@@ -3,6 +3,34 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.5.0] - 2026-03-28
+
+### Added
+- **WandaImportance**: weight × activation norm metric (Sun et al., ICLR 2024)
+  - `wanda_score`, `weight_norm`, `activation_norm`, `wanda_sparsity`
+  - No gradient required, works on any layer with weight parameters
+- **IGSensitivity**: Integrated Gradients per-layer sensitivity scoring
+  - `ig_sensitivity`, `ig_variance`, `ig_relative`
+  - Path integral attribution for adaptive LoRA rank allocation (IGU-LoRA style)
+- **MultiModalBranchAnalyzer**: auto-detect and analyze vision/language/fusion branches
+  - Supports CLIP, LLaVA, OpenCLIP naming conventions
+  - `branch_summary()`, `compare_branches()`, `get_all_layers()` with branch prefixes
+- **ExportHintsBridge**: ONNX/TensorRT optimization recommendations
+  - `quantization_plan()`: per-layer precision (FP32/FP16/INT8) based on importance
+  - `prunable_layers()`: safe-to-remove layers for inference
+  - `fusion_candidates()`: operator fusion opportunities
+  - `tensorrt_config()`: complete TensorRT builder hints
+- **AxolotlConfigBridge**: generate Axolotl YAML config from analysis
+  - Auto-select LoRA target modules by importance
+  - Adaptive rank recommendation based on importance variance
+- **LLaMAFactoryConfigBridge**: generate LLaMA-Factory JSON config
+  - Layer freezing recommendations by importance ranking
+  - Complete training config with metadata
+
+### Changed
+- Total metrics: 16 → 18 (added WandaImportance, IGSensitivity)
+- Total integration bridges: 3 → 6 (added ExportHints, Axolotl, LLaMA-Factory)
+
 ## [0.4.0] - 2026-03-28
 
 ### Added

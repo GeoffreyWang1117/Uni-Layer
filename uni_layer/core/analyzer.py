@@ -512,6 +512,8 @@ class LayerAnalyzer:
             "GradientNorm": m.GradientNorm,
             "HessianTrace": m.HessianTrace,
             "FisherInformation": m.FisherInformation,
+            "WandaImportance": m.WandaImportance,
+            "IGSensitivity": m.IGSensitivity,
             "CKA": m.CKA,
             "EffectiveRank": m.EffectiveRank,
             "NTKTrace": m.NTKTrace,

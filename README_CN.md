@@ -191,7 +191,7 @@ cd Uni-Layer && pip install -e ".[dev]"
 
 ## 路线图
 
-### v0.4.0（当前版本）
+### v0.4.0
 - [x] Diffusion 模型支持（UNet 时间步感知分析）
 - [x] Mamba / SSM 架构支持
 - [x] MoE 路由层分析
@@ -199,12 +199,12 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] 层间 CKA 相似度矩阵
 - [x] GNN 支持（PyG MessagePassing 层）
 
-### v0.5.0
-- [ ] 多模态模型分支分析（视觉编码器 + 语言解码器）
-- [ ] Wanda 风格重要性（权重 x 激活范数）
-- [ ] IG 灵敏度评分（IGU-LoRA 风格）
-- [ ] LLM 训练框架集成（Axolotl / LLaMA-Factory）
-- [ ] ONNX / TensorRT 优化提示导出
+### v0.5.0（当前版本）
+- [x] 多模态模型分支分析（视觉编码器 + 语言解码器）
+- [x] Wanda 风格重要性（权重 x 激活范数）
+- [x] IG 灵敏度评分（IGU-LoRA 风格）
+- [x] LLM 训练框架集成（Axolotl / LLaMA-Factory）
+- [x] ONNX / TensorRT 优化提示导出
 
 ### v0.6.0
 - [ ] 安全与红队分析指标（`security/` 类别）

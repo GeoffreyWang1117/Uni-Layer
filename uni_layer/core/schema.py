@@ -34,6 +34,8 @@ Optimization:
   GradientNorm      -> gradient_norm, gradient_norm_std, gradient_norm_max, gradient_norm_min
   HessianTrace      -> hessian_trace, hessian_trace_std
   FisherInformation  -> fisher_information, fisher_mean
+  WandaImportance    -> wanda_score, weight_norm, activation_norm, wanda_sparsity
+  IGSensitivity      -> ig_sensitivity, ig_variance, ig_relative
 
 Spectral:
   CKA               -> cka_score
@@ -84,6 +86,8 @@ METRIC_PRIMARY_KEYS = {
     "gradient_norm": "gradient_norm",
     "hessian_trace": "hessian_trace",
     "fisher_information": "fisher_information",
+    "wanda": "wanda_score",
+    "ig_sensitivity": "ig_sensitivity",
     "cka": "cka_score",
     "effective_rank": "effective_rank",
     "ntk_trace": "ntk_trace",
@@ -109,6 +113,8 @@ METRIC_OUTPUT_KEYS = {
     ],
     "hessian_trace": ["hessian_trace", "hessian_trace_std"],
     "fisher_information": ["fisher_information", "fisher_mean"],
+    "wanda": ["wanda_score", "weight_norm", "activation_norm", "wanda_sparsity"],
+    "ig_sensitivity": ["ig_sensitivity", "ig_variance", "ig_relative"],
     "cka": ["cka_score"],
     "effective_rank": ["effective_rank", "stable_rank", "rank_ratio"],
     "ntk_trace": ["ntk_trace", "ntk_trace_per_param"],

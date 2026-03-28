@@ -10,13 +10,14 @@ foundation ("which layers matter and why?") that drives better optimization deci
 """
 
 # isort: skip_file
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__ = "Uni-Layer Team"
 
 # Core framework
 from uni_layer.core.analyzer import LayerAnalyzer
 from uni_layer.core.base_metric import LayerMetric
 from uni_layer.core.cka_similarity import CKASimilarity
+from uni_layer.core.multimodal import MultiModalBranchAnalyzer
 from uni_layer.core.profile import LayerProfile
 
 # Metrics
@@ -33,6 +34,7 @@ __all__ = [
     "LayerAnalyzer",
     "LayerMetric",
     "CKASimilarity",
+    "MultiModalBranchAnalyzer",
     "LayerProfile",
     # Benchmark
     "BenchmarkRunner",

@@ -268,7 +268,7 @@ cd Uni-Layer && pip install -e ".[dev]"
 
 ## Roadmap
 
-### v0.4.0 (Current)
+### v0.4.0
 - [x] Diffusion model support (UNet timestep-aware analysis)
 - [x] Mamba / SSM architecture support
 - [x] MoE router layer analysis
@@ -276,12 +276,12 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] Layer-to-layer CKA similarity matrix
 - [x] GNN support (PyG MessagePassing layers)
 
-### v0.5.0
-- [ ] Multi-modal model branch analysis (vision encoder + language decoder)
-- [ ] Wanda-style importance (weight x activation norm)
-- [ ] IG-based sensitivity scoring (IGU-LoRA style)
-- [ ] Integration with LLM training frameworks (Axolotl / LLaMA-Factory)
-- [ ] Export to ONNX / TensorRT optimization hints
+### v0.5.0 (Current)
+- [x] Multi-modal model branch analysis (vision encoder + language decoder)
+- [x] Wanda-style importance (weight x activation norm)
+- [x] IG-based sensitivity scoring (IGU-LoRA style)
+- [x] Integration with LLM training frameworks (Axolotl / LLaMA-Factory)
+- [x] Export to ONNX / TensorRT optimization hints
 
 ### v0.6.0
 - [ ] Security & red-team analysis metrics (`security/` category)
