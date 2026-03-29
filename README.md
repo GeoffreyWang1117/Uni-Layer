@@ -335,6 +335,19 @@ cd Uni-Layer && pip install -e ".[dev]"
 
 ---
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Quick Start](docs/QUICKSTART.md) | Get started in 5 minutes |
+| [Metric Reference](docs/METRICS.md) | All 26 metrics with output keys |
+| [API Reference](docs/API.md) | Complete class and method reference |
+| [Architecture Guide](docs/ARCHITECTURE.md) | Per-architecture examples |
+| [Security Guide](docs/SECURITY.md) | Red-team analysis workflows |
+| [Compression Guide](docs/COMPRESSION.md) | Pruning, distillation, LoRA |
+
+---
+
 ## Citation
 
 ```bibtex
@@ -405,25 +418,36 @@ profile.summary()               # 自然语言摘要
 profile.to_dict()               # 完整 JSON 导出
 ```
 
-### 已验证 20+ 个 HuggingFace 模型
+### 支持的架构（7 大类）
 
-BERT / RoBERTa / DeBERTa / DistilBERT / SciBERT / MiniLM / GPT-2 / Pythia / BLOOM / Falcon / TinyLlama / Llama-3.2-3B / Qwen2.5-3B / ByT5 / DINOv2 / Wav2Vec2 / HuBERT — 全部通过。
+Transformer (20+ HF 模型) | Mamba/SSM | GNN (PyG) | Diffusion (UNet/DiT) | MoE | 多模态 (CLIP/LLaVA) | CNN
+
+### 26 种指标（9 大类别）
+
+优化 (5) | 谱方法 (3) | 信息论 (2) | 表征 (2) | 鲁棒性 (2) | 贝叶斯 (1) | 效率 (4) | 安全 (4) | 架构特定 (3)
+
+### 7 个集成桥
+
+Torch-Pruning | HuggingFace PEFT | 知识蒸馏 | ONNX/TensorRT | Axolotl | LLaMA-Factory | 压缩安全审计
 
 ### CLI
 
 ```bash
-uni-layer info              # 版本、PyTorch、CUDA、已安装指标
+uni-layer info              # 版本、PyTorch、CUDA
 uni-layer list-metrics      # 列出全部 26 种指标
 uni-layer analyze bert-base-uncased   # 分析 HuggingFace 模型
 ```
 
 ### 路线图
 
-**v0.4.0**：Diffusion/Mamba/MoE 支持 / 残差感知 DropLayer / 层间 CKA 矩阵 / GNN 支持
+- **v0.4.0**：Diffusion/Mamba/MoE/GNN 支持 + CKA 矩阵 + 残差感知 DropLayer
+- **v0.5.0**：Wanda/IG 指标 + 多模态 + ONNX/TensorRT + Axolotl/LLaMA-Factory
+- **v0.6.0**：安全/红队指标 + 压缩安全审计
+- **v0.6.1**（当前）：效率指标（FLOPs、权重分布、内在维度、量化敏感度）
+- **v0.7.0**：KV Cache 分析 + SGLang/vLLM 集成 + 推理攻击面分析
+- **v1.0.0**：稳定 API + Web 可视化 + 分布式分析 + 学术论文
 
-**v0.5.0**：多模态分支分析 / Wanda 重要性 / IG 灵敏度 / LLM 训练框架集成
-
-**v1.0.0**：稳定 API / Web 可视化 / 分布式分析 / 预计算模型库 / 学术论文
+> 完整中文文档：[README_CN.md](README_CN.md) | [docs/QUICKSTART_CN.md](docs/QUICKSTART_CN.md) | [docs/METRICS_CN.md](docs/METRICS_CN.md)
 
 ### 许可证
 

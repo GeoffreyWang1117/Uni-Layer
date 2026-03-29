@@ -43,7 +43,7 @@ print(profile.lora_suggestion(8))
 | `"llm_fast"` | BlockInfluence, EffectiveRank, CKA, Entropy, AttentionFlow | 大模型快速扫描（秒级） |
 | `"llm_full"` | + GradientNorm, FisherInformation | 大模型完整分析（分钟级） |
 | `"quick"` | GradientNorm, BlockInfluence, EffectiveRank | 最快概览 |
-| `"full"` | 全部 13 指标 | 小模型深度分析 |
+| `"full"` | 全部 26 指标 | 完整深度分析 |
 
 ---
 
@@ -98,63 +98,86 @@ profile.to_dict()               # 完整 JSON 导出
 
 ---
 
-## 已验证 20+ 个 HuggingFace 模型
+## 支持的架构（7 大类）
 
 | 架构 | 模型 | 层提取 |
 |---|---|---|
-| NLP Encoder | BERT, RoBERTa, DeBERTa-v3, DistilBERT, SciBERT, MiniLM | `encoder.layer.N` |
-| NLP Decoder | GPT-2, Pythia, BLOOM, Falcon, TinyLlama, Llama-3.2-3B, Qwen2.5-3B | `model.layers.N` |
-| Seq2Seq | ByT5 | `encoder.block.N` + `decoder.block.N` |
-| Vision | DINOv2 | `encoder.layer.N` |
-| Speech | Wav2Vec2, HuBERT | `encoder.layers.N` |
+| **Transformer** | BERT, GPT-2, LLaMA, Qwen, T5, ViT, DINOv2, Wav2Vec2 (20+) | 块级（自动检测） |
+| **Mamba/SSM** | Mamba, S4, S6 | 块级（自动检测） |
+| **GNN** | GCNConv, GATConv, SAGEConv (PyG) | 卷积层级 |
+| **Diffusion** | UNet, DDPM, DiT | down/mid/up blocks |
+| **MoE** | Mixtral, Switch Transformer | 路由器 + 专家分析 |
+| **多模态** | CLIP, LLaVA | 分支级分析 |
+| **CNN** | ResNet, ConvNeXt, EfficientNet | 块/层级 |
 
 ---
 
-## 13 种指标（7 大类别）
+## 26 种指标（9 大类别）
 
 | 类别 | 指标 | 衡量内容 |
 |---|---|---|
-| **优化几何** | `GradientNorm`, `HessianTrace`, `FisherInformation` | 层对损失曲面的影响 |
-| **谱与核方法** | `CKA`, `EffectiveRank`, `NTKTrace` | 表征相似性、多样性、核影响力 |
-| **信息论** | `ActivationEntropy`, `MutualInformation` | 信息含量与任务相关性 |
-| **表征结构** | `JacobianRank`, `BlockInfluence` | 表达能力与层冗余度 |
-| **鲁棒性** | `DropLayerRobustness` | 移除该层后的性能损失 |
-| **贝叶斯** | `LaplacePosterior` | 参数不确定性（Laplace 近似） |
-| **架构特定** | `AttentionFlow` | 注意力熵、头多样性（Transformer 专属） |
+| **优化** (5) | `GradientNorm`, `HessianTrace`, `FisherInformation`, `WandaImportance`, `IGSensitivity` | 损失曲面、权重x激活重要性、IG 归因 |
+| **谱方法** (3) | `CKA`, `EffectiveRank`, `NTKTrace` | 表征相似性、多样性、核影响力 |
+| **信息论** (2) | `ActivationEntropy`, `MutualInformation` | 信息含量与任务相关性 |
+| **表征** (2) | `JacobianRank`, `BlockInfluence` | 表达能力与层冗余度 |
+| **鲁棒性** (2) | `DropLayerRobustness`, `ResidualDropLayer` | 消融（含/不含残差保留） |
+| **贝叶斯** (1) | `LaplacePosterior` | 参数不确定性 |
+| **效率** (4) | `EfficiencyProfiler`, `WeightDistribution`, `IntrinsicDimensionality`, `QuantizationSensitivity` | FLOPs、稀疏度、流形维度、量化噪声 |
+| **安全** (4) | `AdversarialSensitivity`, `ActivationAnomalyScore`, `MembershipInferenceRisk`, `AttentionPathTrace` | 对抗鲁棒性、后门检测、隐私泄露、注入攻击 |
+| **架构特定** (3) | `AttentionFlow`, `MoERouterAnalysis`, `DiffusionTimestepAnalysis` | 注意力头、MoE 路由、扩散时间步 |
+
+详见 [docs/METRICS_CN.md](docs/METRICS_CN.md)。
 
 ---
 
-## 集成桥
-
-### Torch-Pruning（剪枝）
+## 集成桥（7 个）
 
 ```python
-from uni_layer.integrations import TorchPruningBridge
+from uni_layer.integrations import (
+    TorchPruningBridge,        # 结构化剪枝 (Torch-Pruning)
+    HuggingFacePEFTBridge,     # LoRA/Adapter (HuggingFace PEFT)
+    DistillationBridge,        # 知识蒸馏层配对
+    ExportHintsBridge,         # ONNX/TensorRT 量化+融合建议
+    AxolotlConfigBridge,       # Axolotl YAML 配置生成
+    LLaMAFactoryConfigBridge,  # LLaMA-Factory JSON 配置生成
+    CompressionSafetyAudit,    # 压缩前后安全审计
+)
+```
 
+### 剪枝
+
+```python
 bridge = TorchPruningBridge(model, contributions)
-pruning_ratios = bridge.as_layer_pruning_ratios(target_sparsity=0.5)
-protected = bridge.get_protected_layers(top_k=3)
+ratios = bridge.as_layer_pruning_ratios(target_sparsity=0.5)
 ```
 
-### HuggingFace PEFT（参数高效微调）
+### LoRA 微调
 
 ```python
-from uni_layer.integrations import HuggingFacePEFTBridge
-from peft import LoraConfig, get_peft_model
-
 bridge = HuggingFacePEFTBridge(model, contributions)
-config_params = bridge.recommend_lora_config_params(metric_name='gradient_norm')
-peft_model = get_peft_model(model, LoraConfig(**config_params))
+config = bridge.recommend_lora_config_params(metric_name='gradient_norm')
 ```
 
-### 知识蒸馏
+### 量化部署
 
 ```python
-from uni_layer.integrations import DistillationBridge
+bridge = ExportHintsBridge(model, contributions)
+plan = bridge.quantization_plan(target="int8", protect_ratio=0.2)
+config = bridge.tensorrt_config()
+```
 
-bridge = DistillationBridge(teacher, student, contributions)
-pairs = bridge.recommend_layer_pairs(top_k=4)
-weights = bridge.recommend_layer_weights()
+### LLM 训练框架
+
+```python
+AxolotlConfigBridge(model, contributions).save_yaml("config.yml", base_model="meta-llama/Llama-2-7b")
+LLaMAFactoryConfigBridge(model, contributions).save_json("config.json", model_name="my-model")
+```
+
+### 安全审计
+
+```python
+audit = CompressionSafetyAudit(pre_contributions, post_contributions)
+report = audit.audit()  # overall_degradation, recommendations
 ```
 
 ---
@@ -163,7 +186,7 @@ weights = bridge.recommend_layer_weights()
 
 ```bash
 uni-layer info                                    # 版本、PyTorch、CUDA、指标数
-uni-layer list-metrics                            # 列出全部 13 种指标
+uni-layer list-metrics                            # 列出全部 26 种指标
 uni-layer list-metrics --format json              # JSON 格式（方便程序解析）
 uni-layer analyze bert-base-uncased               # 分析 HuggingFace 模型
 uni-layer analyze model -m GradientNorm,CKA -o results.json
@@ -206,14 +229,16 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] LLM 训练框架集成（Axolotl / LLaMA-Factory）
 - [x] ONNX / TensorRT 优化提示导出
 
-### v0.6.0（当前版本）
-- [x] 安全与红队分析指标（`security/` 类别）
-  - [x] AdversarialSensitivity：逐层 FGSM/PGD 扰动敏感度
-  - [x] ActivationAnomalyScore：基于激活模式异常的后门检测
-  - [x] MembershipInferenceRisk：逐层梯度泄露风险评分
-  - [x] AttentionPathTrace：对抗性注意力流 / Prompt 注入路径分析
-- [x] 压缩安全审计（剪枝/量化前后的安全性退化量化）
-- [x] `LayerProfile.security_report()` 自动化漏洞摘要
+### v0.6.0
+- [x] 安全与红队分析指标（AdversarialSensitivity, ActivationAnomalyScore, MembershipInferenceRisk, AttentionPathTrace）
+- [x] 压缩安全审计 + `LayerProfile.security_report()`
+
+### v0.6.1（当前版本）
+- [x] 效率指标（`efficiency/` 类别）
+  - [x] EfficiencyProfiler：逐层 FLOPs、参数量、内存、计算占比
+  - [x] WeightDistribution：稀疏度、范数、秩缺陷、峰度
+  - [x] IntrinsicDimensionality：MLE 流形维度估计（LoRA 秩选择）
+  - [x] QuantizationSensitivity：INT8/FP16 量化噪声容忍度
 
 ### v0.7.0
 - [ ] LLM 推理 KV Cache 分析
