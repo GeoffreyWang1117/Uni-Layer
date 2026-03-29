@@ -1,179 +1,212 @@
-# Uni-Layer Quick Start Guide
+# Quick Start Guide (v0.6.1)
 
-This guide will help you get started with Uni-Layer in under 5 minutes.
+Get started with Uni-Layer in 5 minutes. Analyze any PyTorch model across 26 metrics.
 
 ## Installation
 
-### From PyPI (recommended)
-
 ```bash
 pip install uni-layer
+
+# With all optional dependencies
+pip install uni-layer[integrations,viz,science]
 ```
 
-### From Source
-
-```bash
-git clone https://github.com/GeoffreyWang1117/Uni-Layer.git
-cd Uni-Layer
-pip install -e .
-```
-
-## Basic Usage
-
-### 1. Import Required Components
-
-```python
-from uni_layer import LayerAnalyzer
-from uni_layer.metrics import GradientNorm, CKA, EffectiveRank
-```
-
-### 2. Prepare Your Model and Data
+## 1. Basic Analysis
 
 ```python
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
+from uni_layer import LayerAnalyzer, LayerProfile
 
-# Your PyTorch model
-model = YourModel()
+# Your model + data
+model = ...  # any PyTorch model
+X, y = torch.randn(500, 768), torch.randint(0, 10, (500,))
+loader = DataLoader(TensorDataset(X, y), batch_size=32)
 
-# Your data loader
-train_loader = DataLoader(dataset, batch_size=32)
+# Initialize analyzer (auto-detects layers)
+analyzer = LayerAnalyzer(model, task_type="classification")
+
+# Run analysis with a preset
+contributions = analyzer.compute_metrics(preset="llm_fast", data_loader=loader)
+
+# Get automatic insights
+profile = LayerProfile(contributions, model_name="my-model")
+print(profile.summary())
 ```
 
-### 3. Initialize the Analyzer
+## 2. Available Presets
 
 ```python
-analyzer = LayerAnalyzer(
-    model=model,
-    task_type='classification',  # or 'regression', 'generation'
-    device='cuda'  # or 'cpu'
-)
+# Seconds — quick screening
+contributions = analyzer.compute_metrics(preset="llm_fast", data_loader=loader)
+
+# Minutes — thorough analysis
+contributions = analyzer.compute_metrics(preset="llm_full", data_loader=loader)
+
+# All 26 metrics
+contributions = analyzer.compute_metrics(preset="full", data_loader=loader)
 ```
 
-### 4. Compute Layer Contributions
+## 3. Specific Metrics
 
 ```python
-# Define which metrics to compute
-metrics = [
-    GradientNorm(num_batches=10),
-    CKA(num_batches=10),
-    EffectiveRank(num_batches=10),
-]
+from uni_layer.metrics import GradientNorm, BlockInfluence, WandaImportance
 
-# Compute metrics
 contributions = analyzer.compute_metrics(
-    metrics=metrics,
-    data_loader=train_loader,
-    verbose=True
+    metrics=[GradientNorm(), BlockInfluence(), WandaImportance()],
+    data_loader=loader,
+    num_batches=10,
 )
 ```
 
-### 5. Analyze Results
+## 4. LayerProfile Insights
 
 ```python
-# Rank layers by importance
-rankings = analyzer.rank_layers(contributions, "gradient_norm")
+profile = LayerProfile(contributions, model_name="bert-base")
 
-print("Top 5 most important layers:")
-for layer_name, value in rankings[:5]:
-    print(f"  {layer_name}: {value:.4f}")
+# Automatic analysis (no GPU needed)
+profile.redundant_layers      # Layers safe to prune
+profile.bottleneck_layers     # Representation bottlenecks
+profile.consensus_ranking     # Multi-metric agreement ranking
+profile.anomalies             # Statistically unusual layers
+profile.depth_trends          # How metrics evolve with depth
 
-# Get pruning strategy
-pruning_strategy = analyzer.get_pruning_strategy(
-    contributions,
-    metric_name="gradient_norm",
-    prune_ratio=0.3
+# Actionable suggestions
+profile.pruning_suggestion(target_ratio=0.3)  # Pruning plan
+profile.lora_suggestion(base_rank=8)          # LoRA targets + ranks
+
+# Display
+profile.print_report()        # Full report
+profile.print_table()         # Compact table
+```
+
+## 5. CKA Similarity Matrix
+
+```python
+from uni_layer import CKASimilarity
+
+cka = CKASimilarity(model)
+matrix, layer_names = cka.compute(loader, num_batches=10)
+
+# Find redundant layer pairs
+print(cka.most_similar_pairs(matrix, layer_names, top_k=5))
+print(cka.redundant_layers(matrix, layer_names, threshold=0.95))
+print(cka.layer_uniqueness(matrix, layer_names))
+```
+
+## 6. Multi-Modal Models
+
+```python
+from uni_layer import MultiModalBranchAnalyzer
+
+mm = MultiModalBranchAnalyzer(clip_model)
+print(mm.branches)          # {'vision': ..., 'language': ..., 'fusion': ...}
+print(mm.branch_summary())  # params, layers per branch
+
+# Analyze each branch separately
+vision_layers = mm.get_branch_layers("vision")
+```
+
+## 7. Security Analysis
+
+```python
+from uni_layer.metrics import (
+    AdversarialSensitivity, ActivationAnomalyScore,
+    MembershipInferenceRisk, AttentionPathTrace,
 )
 
-# Get layers for distillation
-distill_layers = analyzer.get_distillation_layers(
-    contributions,
-    metric_name="gradient_norm",
-    top_k=6
+# Run security metrics
+contributions = analyzer.compute_metrics(
+    metrics=[AdversarialSensitivity(), ActivationAnomalyScore(),
+             MembershipInferenceRisk()],
+    data_loader=loader,
+)
+
+# Automated vulnerability report
+profile = LayerProfile(contributions)
+report = profile.security_report()
+print(report["summary"])
+print(report["top_risks"])
+```
+
+## 8. Efficiency Profiling
+
+```python
+from uni_layer.metrics import (
+    EfficiencyProfiler, WeightDistribution,
+    IntrinsicDimensionality, QuantizationSensitivity,
+)
+
+# Weight analysis (no data needed!)
+wd = WeightDistribution()
+for name, layer in analyzer.layers.items():
+    result = wd.compute(model=model, layer=layer, layer_name=name,
+                        layer_idx=0, device="cpu")
+    print(f"{name}: sparsity={result['weight_sparsity']:.3f}, "
+          f"rank_ratio={result['weight_rank_ratio']:.3f}")
+
+# FLOPs + quantization sensitivity
+contributions = analyzer.compute_metrics(
+    metrics=[EfficiencyProfiler(), QuantizationSensitivity()],
+    data_loader=loader,
 )
 ```
 
-### 6. Visualize (Optional)
+## 9. Integration Bridges
 
 ```python
-from uni_layer.visualization import plot_layer_contributions
-
-plot_layer_contributions(
-    contributions,
-    metric_name="gradient_norm",
-    save_path="analysis.png"
+from uni_layer.integrations import (
+    TorchPruningBridge,       # Structural pruning
+    HuggingFacePEFTBridge,    # LoRA/Adapter config
+    DistillationBridge,       # Knowledge distillation
+    ExportHintsBridge,        # ONNX/TensorRT hints
+    AxolotlConfigBridge,      # Axolotl YAML generation
+    LLaMAFactoryConfigBridge, # LLaMA-Factory JSON
+    CompressionSafetyAudit,   # Pre/post compression security
 )
+
+# Example: generate LoRA config
+peft_bridge = HuggingFacePEFTBridge(model, contributions)
+print(peft_bridge.recommend_target_modules("gradient_norm", top_k=4))
+print(peft_bridge.recommend_adaptive_ranks("gradient_norm", base_rank=16))
+
+# Example: ONNX/TensorRT quantization plan
+export = ExportHintsBridge(model, contributions)
+print(export.quantization_plan(target="int8", protect_ratio=0.2))
+print(export.tensorrt_config())
+
+# Example: Axolotl config
+axolotl = AxolotlConfigBridge(model, contributions)
+axolotl.save_yaml("config.yml", base_model="meta-llama/Llama-2-7b")
+```
+
+## 10. Supported Architectures
+
+Uni-Layer auto-detects layer structure for:
+
+| Architecture | Examples | Layer Extraction |
+|---|---|---|
+| **Transformer** | BERT, GPT-2, LLaMA, Qwen, T5, ViT | Block-level (encoder.layer.N) |
+| **CNN** | ResNet, ConvNeXt, EfficientNet | Block/layer level |
+| **Mamba/SSM** | Mamba, S4, S6 | Block-level (auto-detected) |
+| **GNN** | GCNConv, GATConv, SAGEConv (PyG) | Conv-level (MessagePassing) |
+| **Diffusion** | UNet, DDPM, DiT | down/mid/up blocks |
+| **MoE** | Mixtral, Switch Transformer | Router + expert analysis |
+| **Multi-Modal** | CLIP, LLaVA | Per-branch analysis |
+
+## CLI
+
+```bash
+uni-layer info                          # Environment info
+uni-layer list-metrics                  # All 26 metrics
+uni-layer analyze bert-base-uncased     # Analyze HF model
+uni-layer analyze bert-base-uncased -m GradientNorm,BlockInfluence -o results.json
 ```
 
 ## Next Steps
 
-- Explore the [examples/](../examples/) directory for more detailed examples
-- Check out the [API Reference](API.md) for complete documentation
-- Read about [available metrics](METRICS.md)
-- Learn about [model-specific tips](MODEL_TIPS.md)
-
-## Common Use Cases
-
-### Knowledge Distillation
-
-```python
-# Identify best layers for distillation
-distill_layers = analyzer.get_distillation_layers(
-    contributions,
-    metric_name="gradient_norm",
-    top_k=6
-)
-```
-
-### Model Pruning
-
-```python
-# Get layer-wise pruning ratios
-pruning_strategy = analyzer.get_pruning_strategy(
-    contributions,
-    metric_name="gradient_norm",
-    prune_ratio=0.4
-)
-```
-
-### PEFT (Parameter-Efficient Fine-Tuning)
-
-```python
-# Find optimal adapter insertion points
-adapter_layers = analyzer.get_peft_insertion_points(
-    contributions,
-    metric_name="gradient_norm",
-    num_adapters=4
-)
-```
-
-## Troubleshooting
-
-### Out of Memory
-
-If you run out of memory:
-- Reduce `num_batches` in metric constructors
-- Use fewer metrics at once
-- Use smaller batch sizes in your data loader
-- Switch to CPU with `device='cpu'`
-
-### Slow Computation
-
-To speed up:
-- Reduce `num_batches` in metrics
-- Use faster metrics (Gradient-based > Hessian-based)
-- Enable GPU with `device='cuda'`
-- Compute metrics in separate runs
-
-### Metric Returns None
-
-If a metric returns None:
-- Check that the metric is compatible with your model architecture
-- Ensure your data loader provides correct format (inputs, targets)
-- Some metrics require labels - check metric documentation
-
-## Getting Help
-
-- 📖 [Full Documentation](https://uni-layer.readthedocs.io)
-- 💬 [GitHub Discussions](https://github.com/GeoffreyWang1117/Uni-Layer/discussions)
-- 🐛 [Issue Tracker](https://github.com/GeoffreyWang1117/Uni-Layer/issues)
+- [Metric Reference](METRICS.md) - All 26 metrics with output keys
+- [Architecture Guide](ARCHITECTURE.md) - Per-architecture examples
+- [Security Guide](SECURITY.md) - Red-team analysis workflows
+- [Compression Guide](COMPRESSION.md) - Pruning/distillation/LoRA
+- [API Reference](API.md) - Complete class/method reference

@@ -1,334 +1,429 @@
-# Available Metrics in Uni-Layer
+# Metric Reference (v0.6.1)
 
-This document provides a comprehensive overview of all layer contribution metrics available in Uni-Layer.
+Uni-Layer provides **26 metrics** across **9 theoretical categories**. Each metric is a self-contained `LayerMetric` subclass that can be used independently or combined via `LayerAnalyzer`.
 
-## Metric Categories
+## Quick Reference Table
 
-1. [Optimization Geometry](#optimization-geometry)
-2. [Spectral & Kernel Methods](#spectral--kernel-methods)
-3. [Information Theory](#information-theory)
-4. [Representation Structure](#representation-structure)
-5. [Robustness](#robustness)
-6. [Probabilistic Bayesian](#probabilistic-bayesian)
-7. [Architecture-Specific](#architecture-specific)
+| # | Metric | Category | Gradient? | Data? | Primary Key | Cost |
+|---|--------|----------|-----------|-------|-------------|------|
+| 1 | GradientNorm | Optimization | Yes | Yes | `gradient_norm` | Low |
+| 2 | HessianTrace | Optimization | Yes | Yes | `hessian_trace` | High |
+| 3 | FisherInformation | Optimization | Yes | Yes | `fisher_information` | Med |
+| 4 | WandaImportance | Optimization | No | Yes | `wanda_score` | Low |
+| 5 | IGSensitivity | Optimization | Yes | Yes | `ig_sensitivity` | High |
+| 6 | CKA | Spectral | No | Yes | `cka_score` | Med |
+| 7 | EffectiveRank | Spectral | No | Yes | `effective_rank` | Med |
+| 8 | NTKTrace | Spectral | Yes | Yes | `ntk_trace` | High |
+| 9 | ActivationEntropy | Info Theory | No | Yes | `activation_entropy` | Low |
+| 10 | MutualInformation | Info Theory | No | Yes | `mutual_information` | Med |
+| 11 | JacobianRank | Representation | Yes | Yes | `jacobian_rank` | High |
+| 12 | BlockInfluence | Representation | No | Yes | `block_influence` | Low |
+| 13 | DropLayerRobustness | Robustness | No | Yes | `droplayer_loss_increase` | Med |
+| 14 | ResidualDropLayer | Robustness | No | Yes | `residual_droplayer_loss_increase` | Med |
+| 15 | LaplacePosterior | Bayesian | Yes | Yes | `laplace_posterior` | High |
+| 16 | EfficiencyProfiler | Efficiency | No | Yes | `flops` | Low |
+| 17 | WeightDistribution | Efficiency | No | No | `weight_sparsity` | Low |
+| 18 | IntrinsicDimensionality | Efficiency | No | Yes | `intrinsic_dim` | Med |
+| 19 | QuantizationSensitivity | Efficiency | No | Yes | `quant_sensitivity_int8` | Med |
+| 20 | AdversarialSensitivity | Security | Yes | Yes | `adv_sensitivity` | Med |
+| 21 | ActivationAnomalyScore | Security | No | Yes | `activation_skewness` | Low |
+| 22 | MembershipInferenceRisk | Security | Yes | Yes | `mi_risk_score` | Med |
+| 23 | AttentionPathTrace | Security | No | Yes | `injection_vulnerability` | Med |
+| 24 | AttentionFlow | Arch-Specific | No | Yes | `attention_entropy` | Med |
+| 25 | MoERouterAnalysis | Arch-Specific | No | Yes | `routing_entropy` | Med |
+| 26 | DiffusionTimestepAnalysis | Arch-Specific | No | Yes | `timestep_sensitivity` | High |
 
 ---
 
-## Optimization Geometry
+## Presets
+
+```python
+contributions = analyzer.compute_metrics(preset="llm_fast", data_loader=loader)
+```
+
+| Preset | Metrics | Use Case |
+|--------|---------|----------|
+| `llm_fast` | BlockInfluence, EffectiveRank, CKA, ActivationEntropy, AttentionFlow | Quick LLM screening (seconds) |
+| `llm_full` | Above + GradientNorm, FisherInformation | Thorough LLM analysis (minutes) |
+| `quick` | GradientNorm, BlockInfluence, EffectiveRank | Rapid importance check |
+| `full` | All metrics including ResidualDropLayer | Complete analysis |
+
+---
+
+## Category 1: Optimization (5 metrics)
 
 ### GradientNorm
 
-**Description**: Measures the magnitude of gradients flowing through a layer.
+Layer importance from gradient magnitude.
 
-**Interpretation**: Higher values indicate more important layers that contribute more to learning.
+**Output:** `gradient_norm`, `gradient_norm_std`, `gradient_norm_max`, `gradient_norm_min`
 
-**Usage**:
 ```python
-from uni_layer.metrics import GradientNorm
-
-metric = GradientNorm(
-    norm_type='l2',      # 'l1', 'l2', or 'linf'
-    num_batches=10,      # Number of batches to average
-    aggregate='mean'     # 'mean', 'sum', or 'max'
-)
+m = GradientNorm(num_batches=10)
 ```
 
-**Returns**: `gradient_norm`, `gradient_norm_std`, `gradient_norm_max`, `gradient_norm_min`
-
-**Computational Cost**: Low
-**Requires Labels**: Yes
-
----
+**Use:** General-purpose importance ranking, pruning decisions, LoRA target selection.
 
 ### HessianTrace
 
-**Description**: Approximates the trace of the Hessian matrix using Hutchinson estimator.
+Loss landscape curvature via Hutchinson trace estimator.
 
-**Interpretation**: Measures curvature of loss landscape. Higher values indicate sharper minima.
+**Output:** `hessian_trace`, `hessian_trace_std`
 
-**Usage**:
 ```python
-from uni_layer.metrics import HessianTrace
-
-metric = HessianTrace(
-    num_samples=5,    # Number of random vectors for estimation
-    num_batches=5     # Number of batches
-)
+m = HessianTrace(num_samples=5, num_batches=10)
 ```
 
-**Returns**: `hessian_trace`, `hessian_trace_std`
-
-**Computational Cost**: High
-**Requires Labels**: Yes
-
----
+**Use:** Loss landscape analysis, learning rate sensitivity, quantization-aware importance.
 
 ### FisherInformation
 
-**Description**: Computes empirical Fisher Information Matrix trace.
+Empirical Fisher Information Matrix trace.
 
-**Interpretation**: Measures sensitivity of output distribution to parameter changes.
+**Output:** `fisher_information`, `fisher_mean`
 
-**Usage**:
 ```python
-from uni_layer.metrics import FisherInformation
-
-metric = FisherInformation(
-    num_batches=10,
-    empirical=True    # Use empirical Fisher
-)
+m = FisherInformation(num_batches=10)
 ```
 
-**Returns**: `fisher_information`, `fisher_mean`
+**Use:** EWC-style continual learning, Bayesian pruning.
 
-**Computational Cost**: Medium
-**Requires Labels**: Yes
+### WandaImportance
+
+Weight x activation norm. **No gradient required.** (Sun et al., ICLR 2024)
+
+**Output:** `wanda_score`, `weight_norm`, `activation_norm`, `wanda_sparsity`
+
+```python
+m = WandaImportance(num_batches=10, sparsity_threshold=1e-3)
+```
+
+**Use:** Gradient-free LLM pruning at scale, unstructured pruning.
+
+### IGSensitivity
+
+Integrated Gradients per-layer attribution via path integral.
+
+**Output:** `ig_sensitivity`, `ig_variance`, `ig_relative`
+
+```python
+m = IGSensitivity(num_steps=10, num_batches=5)
+```
+
+**Use:** Adaptive LoRA rank allocation (IGU-LoRA style), fine-grained attribution.
 
 ---
 
-## Spectral & Kernel Methods
+## Category 2: Spectral & Kernel (3 metrics)
 
-### CKA (Centered Kernel Alignment)
+### CKA
 
-**Description**: Measures similarity between layer representations and output.
+Centered Kernel Alignment — representation similarity with output.
 
-**Interpretation**: Higher CKA indicates better alignment with final predictions.
+**Output:** `cka_score`
 
-**Usage**:
 ```python
-from uni_layer.metrics import CKA
-
-metric = CKA(
-    compare_to='output',  # 'output', 'previous', or 'input'
-    num_batches=10,
-    kernel='linear'       # 'linear' or 'rbf'
-)
+m = CKA(compare_to="output", kernel="linear", cka_batch_size=256)
 ```
 
-**Returns**: `cka_score`
-
-**Computational Cost**: Medium
-**Requires Labels**: No
-
----
+**Use:** Layer-output alignment, distillation layer pairing. See also `CKASimilarity` for N x N pairwise matrix.
 
 ### EffectiveRank
 
-**Description**: Computes effective rank based on singular value entropy.
+Representation diversity via singular value entropy. Uses randomized SVD.
 
-**Interpretation**: Higher rank indicates more diverse, less redundant representations.
+**Output:** `effective_rank`, `stable_rank`, `rank_ratio`
 
-**Usage**:
 ```python
-from uni_layer.metrics import EffectiveRank
-
-metric = EffectiveRank(
-    num_batches=10,
-    epsilon=1e-10
-)
+m = EffectiveRank(num_batches=10, n_components=50)
 ```
 
-**Returns**: `effective_rank`, `stable_rank`, `rank_ratio`
-
-**Computational Cost**: Medium
-**Requires Labels**: No
-
----
+**Use:** Bottleneck detection (rank drops), representation quality.
 
 ### NTKTrace
 
-**Description**: Computes Neural Tangent Kernel trace approximation.
+Neural Tangent Kernel trace approximation.
 
-**Interpretation**: Measures layer's influence on model predictions via parameter gradients.
+**Output:** `ntk_trace`, `ntk_trace_per_param`
 
-**Usage**:
 ```python
-from uni_layer.metrics import NTKTrace
-
-metric = NTKTrace(
-    num_samples=100,
-    num_classes=None    # Auto-detect if None
-)
+m = NTKTrace(num_batches=5)
 ```
 
-**Returns**: `ntk_trace`, `ntk_trace_per_param`
-
-**Computational Cost**: High
-**Requires Labels**: No
+**Use:** Training dynamics research, parameter influence analysis.
 
 ---
 
-## Information Theory
-
-### MutualInformation
-
-**Description**: Estimates mutual information between activations and targets.
-
-**Interpretation**: Higher MI means layer captures more task-relevant information.
-
-**Usage**:
-```python
-from uni_layer.metrics import MutualInformation
-
-metric = MutualInformation(
-    num_batches=10,
-    task_type='classification',  # or 'regression'
-    n_neighbors=3
-)
-```
-
-**Returns**: `mutual_information`, `mi_max`, `mi_std`
-
-**Computational Cost**: Medium
-**Requires Labels**: Yes
-
----
+## Category 3: Information Theory (2 metrics)
 
 ### ActivationEntropy
 
-**Description**: Computes entropy of layer activation distribution.
+Shannon entropy of activation distribution.
 
-**Interpretation**: Higher entropy indicates more diverse activations.
+**Output:** `activation_entropy`, `activation_mean`, `activation_std`, `activation_sparsity`
 
-**Usage**:
 ```python
-from uni_layer.metrics import ActivationEntropy
-
-metric = ActivationEntropy(
-    num_batches=10,
-    num_bins=50
-)
+m = ActivationEntropy(num_batches=10, num_bins=50)
 ```
 
-**Returns**: `activation_entropy`, `activation_mean`, `activation_std`, `activation_sparsity`
+**Use:** Information bottleneck analysis, layer capacity estimation.
 
-**Computational Cost**: Low
-**Requires Labels**: No
+### MutualInformation
+
+MI between activations and targets.
+
+**Output:** `mutual_information`, `mi_max`, `mi_std`
+
+```python
+m = MutualInformation(num_batches=10)
+```
+
+**Use:** Task-relevance scoring, information flow analysis.
 
 ---
 
-## Representation Structure
+## Category 4: Representation (2 metrics)
+
+### BlockInfluence
+
+Layer transformation magnitude — cosine distance between input/output (ShortGPT, ACL 2025).
+
+**Output:** `block_influence`, `block_similarity`
+
+```python
+m = BlockInfluence(num_batches=10)
+```
+
+**Use:** LLM layer pruning (low influence = safe to remove), redundancy detection.
 
 ### JacobianRank
 
-**Description**: Computes rank of the layer's Jacobian matrix.
+Effective dimensionality of input-output Jacobian.
 
-**Interpretation**: Higher rank indicates more expressive transformations.
+**Output:** `jacobian_rank`, `jacobian_rank_ratio`, `jacobian_condition`, `jacobian_max_sv`
 
-**Usage**:
 ```python
-from uni_layer.metrics import JacobianRank
-
-metric = JacobianRank(
-    num_samples=100,
-    rank_threshold=1e-3
-)
+m = JacobianRank(num_batches=5)
 ```
 
-**Returns**: `jacobian_rank`, `jacobian_rank_ratio`, `jacobian_condition`, `jacobian_max_sv`
-
-**Computational Cost**: High
-**Requires Labels**: No
+**Use:** Training stability analysis (condition number), transformation properties.
 
 ---
 
-## Robustness
+## Category 5: Robustness (2 metrics)
 
 ### DropLayerRobustness
 
-**Description**: Measures performance degradation when layer is dropped.
+Performance degradation when layer is zeroed (standard ablation).
 
-**Interpretation**: Larger performance drop indicates more critical layer.
+**Output:** `droplayer_loss_increase`, `droplayer_loss_ratio`
 
-**Usage**:
 ```python
-from uni_layer.metrics import DropLayerRobustness
-
-metric = DropLayerRobustness(
-    num_batches=10,
-    metric='loss',      # 'loss' or 'accuracy'
-    drop_type='zero'    # 'zero' or 'identity'
-)
+m = DropLayerRobustness(num_batches=10, metric="loss", drop_type="zero")
 ```
 
-**Returns**: `droplayer_loss_increase`, `droplayer_loss_ratio`, `droplayer_acc_decrease`, `droplayer_acc_ratio`
+### ResidualDropLayer
 
-**Computational Cost**: Medium
-**Requires Labels**: Yes
+Residual-aware ablation — replaces output with input (preserves residual stream).
+
+**Output:** `residual_droplayer_loss_increase`, `residual_droplayer_loss_ratio`, `residual_ratio`, `transform_norm_ratio`
+
+```python
+m = ResidualDropLayer(num_batches=10, metric="loss")
+```
+
+**Use:** Correct ablation for transformers/Mamba with skip connections. `residual_ratio` near 1.0 means the layer barely transforms its input.
+
+---
+
+## Category 6: Bayesian (1 metric)
+
+### LaplacePosterior
+
+Parameter uncertainty via Laplace approximation. Requires `laplace-torch`.
+
+**Output:** `laplace_posterior`, `laplace_posterior_std`
+
+```python
+m = LaplacePosterior(num_batches=10)
+```
+
+---
+
+## Category 7: Efficiency (4 metrics)
+
+### EfficiencyProfiler
+
+Per-layer FLOPs, parameters, memory footprint.
+
+**Output:** `flops`, `param_count`, `param_memory_mb`, `activation_memory_mb`, `compute_ratio`
+
+```python
+m = EfficiencyProfiler()
+```
+
+**Use:** Hardware-aware pruning budget, deployment cost estimation.
+
+### WeightDistribution
+
+Weight matrix statistics. **Does not require data** (`requires_data=False`).
+
+**Output:** `weight_sparsity`, `weight_l1_norm`, `weight_l2_norm`, `weight_rank_ratio`, `weight_outlier_ratio`, `weight_kurtosis`
+
+```python
+m = WeightDistribution(sparsity_threshold=1e-3, svd_components=50)
+# No data_loader needed!
+result = m.compute(model=model, layer=layer, layer_name="0", layer_idx=0, device="cpu")
+```
+
+**Use:** Pre-pruning analysis, quantization readiness check, weight health monitoring.
+
+### IntrinsicDimensionality
+
+MLE intrinsic dimension of activation manifold (Levina-Bickel 2004).
+
+**Output:** `intrinsic_dim`, `intrinsic_dim_ratio`, `ambient_dim`
+
+```python
+m = IntrinsicDimensionality(num_batches=10, k=20)
+```
+
+**Use:** **Optimal LoRA rank selection** (rank ~ intrinsic dim), compression budget allocation.
+
+> Aghajanyan et al. (ACL 2021) showed fine-tuning operates on a low intrinsic dimension subspace. This metric estimates that dimension per layer.
+
+### QuantizationSensitivity
+
+Simulates INT8/FP16 quantization, measures output deviation.
+
+**Output:** `quant_sensitivity_int8`, `quant_sensitivity_fp16`, `activation_range`, `weight_dynamic_range`
+
+```python
+m = QuantizationSensitivity(num_batches=5)
+```
+
+**Use:** Mixed-precision deployment, INT8 quantization budget, ONNX/TensorRT precision selection.
+
+---
+
+## Category 8: Security (4 metrics)
+
+### AdversarialSensitivity
+
+FGSM perturbation sensitivity per layer.
+
+**Output:** `adv_sensitivity`, `adv_amplification`, `adv_directional_change`
+
+```python
+m = AdversarialSensitivity(epsilon=0.01, num_batches=5)
+```
+
+**Use:** Adversarial robustness audit, identifying vulnerable layers.
+
+### ActivationAnomalyScore
+
+Backdoor detection via activation distribution statistics.
+
+**Output:** `activation_skewness`, `activation_kurtosis`, `neuron_outlier_ratio`, `activation_bimodality`
+
+```python
+m = ActivationAnomalyScore(num_batches=10)
+```
+
+**Use:** Trojan/backdoor detection (`activation_bimodality > 0.555` is suspicious), supply chain security.
+
+### MembershipInferenceRisk
+
+Gradient leakage risk scoring.
+
+**Output:** `gradient_entropy`, `gradient_snr`, `gradient_memorization`, `mi_risk_score`
+
+```python
+m = MembershipInferenceRisk(num_batches=5)
+```
+
+**Use:** Privacy audit, federated learning risk, differential privacy budget allocation.
+
+### AttentionPathTrace
+
+Prompt injection vulnerability analysis for transformers.
+
+**Output:** `attention_concentration`, `attention_manipulability`, `attention_persistence`, `injection_vulnerability`
+
+```python
+m = AttentionPathTrace(num_batches=5)
+```
+
+**Use:** LLM safety audit, prompt injection defense. Non-attention layers use activation-based proxy.
+
+---
+
+## Category 9: Architecture-Specific (3 metrics)
+
+### AttentionFlow
+
+Transformer attention head diversity and entropy analysis.
+
+**Output:** `attention_entropy`, `attention_max_weight`, `head_diversity`, `attention_distance`
+
+```python
+m = AttentionFlow(num_batches=10, analyze_heads=True)
+```
+
+### MoERouterAnalysis
+
+MoE routing behavior: entropy, expert utilization, load balance.
+
+**Output:** `routing_entropy`, `expert_utilization`, `load_balance_score`, `top_expert_ratio`, `expert_overlap`
+
+```python
+m = MoERouterAnalysis(num_batches=10, top_k=2)
+```
+
+Non-MoE layers return `None` for all keys.
+
+### DiffusionTimestepAnalysis
+
+Per-layer importance across denoising timesteps (UNet/DiT).
+
+**Output:** `timestep_sensitivity`, `mean_activation_norm`, `early_importance`, `late_importance`, `timestep_variance`
+
+```python
+m = DiffusionTimestepAnalysis(num_timesteps=10, max_timestep=1000, num_batches=5)
+```
+
+Non-diffusion models return `None`. Use `get_diffusion_blocks()` to extract UNet blocks.
 
 ---
 
 ## Metric Selection Guide
 
-### For Model Compression (Pruning)
-1. **GradientNorm** - Fast, reliable indicator
-2. **DropLayerRobustness** - Direct measure of importance
-3. **FisherInformation** - Principled importance measure
-
-### For Knowledge Distillation
-1. **CKA** - Measures representation similarity
-2. **GradientNorm** - Identifies learning-critical layers
-3. **EffectiveRank** - Ensures diverse knowledge transfer
-
-### For Model Interpretability
-1. **MutualInformation** - Task-relevant information
-2. **ActivationEntropy** - Representation diversity
-3. **CKA** - Layer similarity analysis
-
-### For PEFT (Adapter Insertion)
-1. **GradientNorm** - High gradient = high adaptation potential
-2. **NTKTrace** - Measures parameter influence
-3. **JacobianRank** - Layer expressiveness
-
----
-
-## Computational Cost Summary
-
-| Metric | Cost | Time (relative) | Memory |
-|--------|------|-----------------|--------|
-| GradientNorm | Low | 1x | Low |
-| ActivationEntropy | Low | 1x | Low |
-| CKA | Medium | 2x | Medium |
-| EffectiveRank | Medium | 2x | Medium |
-| FisherInformation | Medium | 2.5x | Medium |
-| MutualInformation | Medium | 2.5x | Medium |
-| DropLayerRobustness | Medium | 3x | Low |
-| NTKTrace | High | 5x | High |
-| HessianTrace | High | 6x | High |
-| JacobianRank | High | 5x | High |
-
----
-
-## Best Practices
-
-1. **Start with fast metrics**: GradientNorm, ActivationEntropy
-2. **Validate with robust metrics**: DropLayerRobustness
-3. **Use multiple metrics**: Different metrics capture different aspects
-4. **Consider computational budget**: Use `num_batches` to control cost
-5. **Match metric to task**: Classification vs. regression metrics differ
+| Goal | Recommended Metrics |
+|------|-------------------|
+| **LLM pruning** | BlockInfluence, ResidualDropLayer, WandaImportance, EffectiveRank |
+| **LoRA rank selection** | IntrinsicDimensionality, IGSensitivity, GradientNorm |
+| **Quantization planning** | QuantizationSensitivity, WeightDistribution, EfficiencyProfiler |
+| **Distillation** | CKA, EffectiveRank, BlockInfluence |
+| **Security audit** | AdversarialSensitivity, ActivationAnomalyScore, MembershipInferenceRisk |
+| **MoE optimization** | MoERouterAnalysis, BlockInfluence, EffectiveRank |
+| **Diffusion model** | DiffusionTimestepAnalysis, BlockInfluence, EffectiveRank |
+| **Hardware deployment** | EfficiencyProfiler, QuantizationSensitivity, WeightDistribution |
 
 ---
 
 ## Adding Custom Metrics
 
-You can easily add custom metrics by extending the `LayerMetric` base class:
-
 ```python
 from uni_layer.core.base_metric import LayerMetric
 
-class MyCustomMetric(LayerMetric):
+class MyMetric(LayerMetric):
     def __init__(self, **kwargs):
-        super().__init__(
-            name="my_custom_metric",
-            category="custom",
-            requires_gradient=False,
-            requires_data=True,
-            **kwargs
-        )
+        super().__init__(name="my_metric", category="custom",
+                         requires_gradient=False, requires_data=True, **kwargs)
 
-    def compute(self, model, layer, layer_name, layer_idx, data_loader, device, **kwargs):
-        # Your metric computation logic
-        return {"my_custom_metric": value}
+    def compute(self, model, layer, layer_name, layer_idx,
+                data_loader=None, device="cuda", _cached_activations=None, **kwargs):
+        return {"my_metric": score}
 ```
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for more details on contributing new metrics.
+Register primary/output keys in `uni_layer/core/schema.py` to enable validation and ranking.
