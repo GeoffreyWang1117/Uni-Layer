@@ -5,9 +5,9 @@
 [![PyPI](https://img.shields.io/pypi/v/uni-layer.svg)](https://pypi.org/project/uni-layer/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-387%20passed-brightgreen.svg)]()
 
-Uni-Layer is a PyTorch toolkit that scores every layer in your neural network across **13 metrics in 7 theoretical categories**. It tells you which layers matter most — so you can prune smarter, fine-tune better, and distill more effectively.
+Uni-Layer is a PyTorch toolkit that scores every layer in your neural network across **26 metrics in 9 theoretical categories**. It tells you which layers matter most — so you can prune smarter, fine-tune better, distill more effectively, and audit model security.
 
 **[English](#quick-start)** | **[中文](#中文说明)**
 
@@ -17,13 +17,15 @@ Uni-Layer is a PyTorch toolkit that scores every layer in your neural network ac
 
 Most compression and fine-tuning tools treat all layers equally or rely on simple magnitude heuristics. Uni-Layer replaces guesswork with principled, multi-metric layer analysis.
 
-There is no other library that does this. Captum does input attribution. Torch-Pruning does structural pruning. TransformerLens does mechanistic interpretability. **Uni-Layer is the only tool that unifies 13 layer importance metrics under one API and bridges them to downstream tools.**
+There is no other library that does this. Captum does input attribution. Torch-Pruning does structural pruning. TransformerLens does mechanistic interpretability. **Uni-Layer is the only tool that unifies 26 layer importance metrics under one API and bridges them to 7 downstream tools.**
 
 | You want to... | Uni-Layer provides | Works with |
 |---|---|---|
 | **Prune** a model | Per-layer importance scores & pruning ratios | [Torch-Pruning](https://github.com/VainF/Torch-Pruning) |
 | **LoRA fine-tune** | Which layers to target, adaptive rank allocation | [HuggingFace PEFT](https://github.com/huggingface/peft) |
 | **Distill** knowledge | Layer pairing & per-layer distillation weights | Any distillation framework |
+| **Quantize** selectively | Per-layer INT8/FP16 sensitivity + mixed-precision plan | ONNX / TensorRT |
+| **Audit** security | Adversarial sensitivity, backdoor detection, privacy risk | Red-team workflows |
 | **Understand** a model | Auto-generated layer profile with actionable insights | Standalone |
 
 ---
@@ -65,7 +67,7 @@ print(profile.lora_suggestion(base_rank=8))
 | `"llm_fast"` | BlockInfluence, EffectiveRank, CKA, ActivationEntropy, AttentionFlow | LLM quick scan (seconds) |
 | `"llm_full"` | + GradientNorm, FisherInformation | LLM full analysis (minutes) |
 | `"quick"` | GradientNorm, BlockInfluence, EffectiveRank | Fastest overview |
-| `"full"` | All 13 metrics | Small model deep analysis |
+| `"full"` | All 26 metrics | Complete deep analysis |
 
 ---
 
@@ -120,50 +122,35 @@ Every call to `compute_metrics()` returns a structured dict:
 [("encoder.layer.9", 0.1094), ("encoder.layer.0", 0.0624), ...]
 ```
 
-### Verified on 20+ HuggingFace Models
+### Supported Architectures (7 families)
 
-| Architecture | Models tested | Block-level extraction |
+| Architecture | Models | Layer Extraction |
 |---|---|---|
-| NLP Encoder | BERT, RoBERTa, DeBERTa-v3, DistilBERT, SciBERT, MiniLM | `encoder.layer.N` |
-| NLP Decoder | GPT-2, Pythia, BLOOM, Falcon, TinyLlama, Llama-3.2-3B, Qwen2.5-3B | `model.layers.N` |
-| Seq2Seq | ByT5 | `encoder.block.N` + `decoder.block.N` |
-| Vision | DINOv2 | `encoder.layer.N` |
-| Speech | Wav2Vec2, HuBERT | `encoder.layers.N` |
+| **Transformer** | BERT, GPT-2, LLaMA, Qwen, T5, ViT, DINOv2, Wav2Vec2 (20+) | Block-level (auto) |
+| **Mamba/SSM** | Mamba, S4, S6 | Block-level (auto) |
+| **GNN** | GCNConv, GATConv, SAGEConv (PyG) | Conv-level |
+| **Diffusion** | UNet, DDPM, DiT | down/mid/up blocks |
+| **MoE** | Mixtral, Switch Transformer | Router + expert analysis |
+| **Multi-Modal** | CLIP, LLaVA | Per-branch analysis |
+| **CNN** | ResNet, ConvNeXt, EfficientNet | Block/layer level |
 
 ---
 
-## 13 Metrics in 7 Categories
+## 26 Metrics in 9 Categories
 
 | Category | Metrics | What it measures |
 |---|---|---|
-| **Optimization** | `GradientNorm`, `HessianTrace`, `FisherInformation` | How much the layer affects the loss landscape |
-| **Spectral** | `CKA`, `EffectiveRank`, `NTKTrace` | Representation similarity, diversity, kernel influence |
-| **Information Theory** | `ActivationEntropy`, `MutualInformation` | Information content and task relevance |
-| **Representation** | `JacobianRank`, `BlockInfluence` | Expressiveness and layer redundancy |
-| **Robustness** | `DropLayerRobustness` | Performance impact of removing the layer |
-| **Bayesian** | `LaplacePosterior` | Parameter uncertainty (Laplace approximation) |
-| **Architecture** | `AttentionFlow` | Attention entropy, head diversity (Transformers) |
+| **Optimization** (5) | `GradientNorm`, `HessianTrace`, `FisherInformation`, `WandaImportance`, `IGSensitivity` | Loss landscape, weight x activation importance, IG attribution |
+| **Spectral** (3) | `CKA`, `EffectiveRank`, `NTKTrace` | Representation similarity, diversity, kernel influence |
+| **Information Theory** (2) | `ActivationEntropy`, `MutualInformation` | Information content and task relevance |
+| **Representation** (2) | `JacobianRank`, `BlockInfluence` | Expressiveness and layer redundancy |
+| **Robustness** (2) | `DropLayerRobustness`, `ResidualDropLayer` | Ablation with/without residual preservation |
+| **Bayesian** (1) | `LaplacePosterior` | Parameter uncertainty |
+| **Efficiency** (4) | `EfficiencyProfiler`, `WeightDistribution`, `IntrinsicDimensionality`, `QuantizationSensitivity` | FLOPs, sparsity, manifold dim, quantization noise |
+| **Security** (4) | `AdversarialSensitivity`, `ActivationAnomalyScore`, `MembershipInferenceRisk`, `AttentionPathTrace` | Adversarial robustness, backdoor, privacy, injection |
+| **Arch-Specific** (3) | `AttentionFlow`, `MoERouterAnalysis`, `DiffusionTimestepAnalysis` | Attention heads, MoE routing, diffusion timesteps |
 
-<details>
-<summary>Full output keys per metric</summary>
-
-| Metric | Primary Key | Additional Keys |
-|---|---|---|
-| GradientNorm | `gradient_norm` | `gradient_norm_std`, `_max`, `_min` |
-| HessianTrace | `hessian_trace` | `hessian_trace_std` |
-| FisherInformation | `fisher_information` | `fisher_mean` |
-| CKA | `cka_score` | |
-| EffectiveRank | `effective_rank` | `stable_rank`, `rank_ratio` |
-| NTKTrace | `ntk_trace` | `ntk_trace_per_param` |
-| ActivationEntropy | `activation_entropy` | `activation_mean`, `_std`, `_sparsity` |
-| MutualInformation | `mutual_information` | `mi_max`, `mi_std` |
-| JacobianRank | `jacobian_rank` | `jacobian_rank_ratio`, `_condition`, `_max_sv` |
-| BlockInfluence | `block_influence` | `block_similarity` |
-| DropLayerRobustness | `droplayer_loss_increase` | `droplayer_loss_ratio` |
-| LaplacePosterior | `laplace_posterior` | `laplace_posterior_std` |
-| AttentionFlow | `attention_entropy` | `attention_max_weight`, `head_diversity`, `attention_distance` |
-
-</details>
+See [docs/METRICS.md](docs/METRICS.md) for full output keys and usage examples.
 
 ---
 
@@ -202,13 +189,42 @@ pairs = bridge.recommend_layer_pairs(top_k=4)
 weights = bridge.recommend_layer_weights()
 ```
 
+### ONNX / TensorRT
+
+```python
+from uni_layer.integrations import ExportHintsBridge
+
+bridge = ExportHintsBridge(model, contributions)
+plan = bridge.quantization_plan(target="int8", protect_ratio=0.2)
+config = bridge.tensorrt_config()
+```
+
+### LLM Frameworks (Axolotl / LLaMA-Factory)
+
+```python
+from uni_layer.integrations import AxolotlConfigBridge, LLaMAFactoryConfigBridge
+
+AxolotlConfigBridge(model, contributions).save_yaml("config.yml", base_model="meta-llama/Llama-2-7b")
+LLaMAFactoryConfigBridge(model, contributions).save_json("config.json", model_name="my-model")
+```
+
+### Security Audit
+
+```python
+from uni_layer.integrations import CompressionSafetyAudit
+
+audit = CompressionSafetyAudit(pre_contributions, post_contributions)
+report = audit.audit()
+print(report["overall_degradation"], report["recommendations"])
+```
+
 ---
 
 ## CLI
 
 ```bash
 uni-layer info                                    # version, PyTorch, CUDA, metrics
-uni-layer list-metrics                            # all 13 metrics with keys
+uni-layer list-metrics                            # all 26 metrics with keys
 uni-layer list-metrics --format json              # machine-readable
 uni-layer analyze bert-base-uncased               # analyze a HuggingFace model
 uni-layer analyze bert-base-uncased -m GradientNorm,BlockInfluence -o results.json
@@ -283,14 +299,17 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] Integration with LLM training frameworks (Axolotl / LLaMA-Factory)
 - [x] Export to ONNX / TensorRT optimization hints
 
-### v0.6.0 (Current)
+### v0.6.0
 - [x] Security & red-team analysis metrics (`security/` category)
-  - [x] AdversarialSensitivity: per-layer FGSM/PGD perturbation sensitivity
-  - [x] ActivationAnomalyScore: backdoor detection via activation pattern analysis
-  - [x] MembershipInferenceRisk: per-layer gradient leakage scoring
-  - [x] AttentionPathTrace: adversarial attention flow / prompt injection path analysis
-- [x] Compression safety audit (safety degradation pre/post pruning/quantization)
-- [x] `LayerProfile.security_report()` for automated vulnerability summary
+  - [x] AdversarialSensitivity, ActivationAnomalyScore, MembershipInferenceRisk, AttentionPathTrace
+- [x] Compression safety audit + `LayerProfile.security_report()`
+
+### v0.6.1 (Current)
+- [x] Efficiency metrics (`efficiency/` category)
+  - [x] EfficiencyProfiler: per-layer FLOPs, param count, memory, compute ratio
+  - [x] WeightDistribution: sparsity, norms, rank deficiency, kurtosis
+  - [x] IntrinsicDimensionality: MLE manifold dimension for LoRA rank selection
+  - [x] QuantizationSensitivity: INT8/FP16 noise tolerance per layer
 
 ### v0.7.0
 - [ ] KV Cache analysis for LLM inference
@@ -341,7 +360,7 @@ MIT License. See [LICENSE](LICENSE).
 
 **先理解你的层，再优化它们。**
 
-Uni-Layer 是一个 PyTorch 工具库，通过 **7 大理论类别的 13 种指标** 为神经网络的每一层打分。它自动生成可操作的洞察——告诉你哪些层冗余可以剪枝、哪些层重要应该用 LoRA 微调、哪些层是表征瓶颈。
+Uni-Layer 是一个 PyTorch 工具库，通过 **9 大理论类别的 26 种指标** 为神经网络的每一层打分。支持 Transformer、Mamba/SSM、GNN、Diffusion、MoE、多模态等 7 种架构。提供安全审计、效率分析、量化敏感度等全面的模型分析能力。
 
 ### 快速开始
 
@@ -368,7 +387,7 @@ print(profile.lora_suggestion(8))       # LoRA 建议
 | `"llm_fast"` | BlockInfluence, EffectiveRank, CKA, Entropy, AttentionFlow | 大模型快速扫描（秒级） |
 | `"llm_full"` | + GradientNorm, FisherInformation | 大模型完整分析（分钟级） |
 | `"quick"` | GradientNorm, BlockInfluence, EffectiveRank | 最快概览 |
-| `"full"` | 全部 13 指标 | 小模型深度分析 |
+| `"full"` | 全部 26 指标 | 完整深度分析 |
 
 ### LayerProfile 自动分析
 
@@ -394,7 +413,7 @@ BERT / RoBERTa / DeBERTa / DistilBERT / SciBERT / MiniLM / GPT-2 / Pythia / BLOO
 
 ```bash
 uni-layer info              # 版本、PyTorch、CUDA、已安装指标
-uni-layer list-metrics      # 列出全部 13 种指标
+uni-layer list-metrics      # 列出全部 26 种指标
 uni-layer analyze bert-base-uncased   # 分析 HuggingFace 模型
 ```
 

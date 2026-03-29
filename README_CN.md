@@ -5,9 +5,9 @@
 [![PyPI](https://img.shields.io/pypi/v/uni-layer.svg)](https://pypi.org/project/uni-layer/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-205%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-387%20passed-brightgreen.svg)]()
 
-Uni-Layer 是一个 PyTorch 工具库，通过 **7 大理论类别的 13 种指标** 为神经网络的每一层打分。它自动生成可操作的洞察——告诉你哪些层冗余可以剪枝、哪些层重要应该用 LoRA 微调、哪些层是表征瓶颈。
+Uni-Layer 是一个 PyTorch 工具库，通过 **9 大理论类别的 26 种指标** 为神经网络的每一层打分。支持 Transformer、Mamba/SSM、GNN、Diffusion、MoE、多模态等 7 种架构。提供安全审计、效率分析、量化敏感度等全面分析能力。
 
 > 完整英文文档见 [README.md](README.md)
 
