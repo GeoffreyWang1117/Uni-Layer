@@ -60,6 +60,12 @@ Robustness:
 Bayesian:
   LaplacePosterior  -> laplace_posterior, laplace_posterior_std
 
+Efficiency:
+  EfficiencyProfiler     -> flops, param_count, param_memory_mb, activation_memory_mb, compute_ratio
+  WeightDistribution     -> weight_sparsity, weight_l1_norm, weight_l2_norm, weight_rank_ratio, weight_outlier_ratio, weight_kurtosis
+  IntrinsicDimensionality -> intrinsic_dim, intrinsic_dim_ratio, ambient_dim
+  QuantizationSensitivity -> quant_sensitivity_int8, quant_sensitivity_fp16, activation_range, weight_dynamic_range
+
 Security:
   AdversarialSensitivity -> adv_sensitivity, adv_amplification, adv_directional_change
   ActivationAnomalyScore -> activation_skewness, activation_kurtosis, neuron_outlier_ratio, activation_bimodality
@@ -104,6 +110,10 @@ METRIC_PRIMARY_KEYS = {
     "droplayer_robustness": "droplayer_loss_increase",
     "residual_droplayer": "residual_droplayer_loss_increase",
     "laplace_posterior": "laplace_posterior",
+    "efficiency": "flops",
+    "weight_distribution": "weight_sparsity",
+    "intrinsic_dim": "intrinsic_dim",
+    "quantization_sensitivity": "quant_sensitivity_int8",
     "adversarial_sensitivity": "adv_sensitivity",
     "activation_anomaly": "activation_skewness",
     "membership_inference": "mi_risk_score",
@@ -150,6 +160,32 @@ METRIC_OUTPUT_KEYS = {
         "transform_norm_ratio",
     ],
     "laplace_posterior": ["laplace_posterior", "laplace_posterior_std"],
+    "efficiency": [
+        "flops",
+        "param_count",
+        "param_memory_mb",
+        "activation_memory_mb",
+        "compute_ratio",
+    ],
+    "weight_distribution": [
+        "weight_sparsity",
+        "weight_l1_norm",
+        "weight_l2_norm",
+        "weight_rank_ratio",
+        "weight_outlier_ratio",
+        "weight_kurtosis",
+    ],
+    "intrinsic_dim": [
+        "intrinsic_dim",
+        "intrinsic_dim_ratio",
+        "ambient_dim",
+    ],
+    "quantization_sensitivity": [
+        "quant_sensitivity_int8",
+        "quant_sensitivity_fp16",
+        "activation_range",
+        "weight_dynamic_range",
+    ],
     "adversarial_sensitivity": [
         "adv_sensitivity",
         "adv_amplification",

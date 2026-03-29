@@ -1,6 +1,7 @@
 """Layer contribution metrics"""
 
 # Optimization metrics
+# Efficiency metrics
 # Security metrics
 # Architecture-specific metrics
 from uni_layer.metrics.architecture_specific.attention_flow import AttentionFlow
@@ -12,6 +13,10 @@ from uni_layer.metrics.architecture_specific.moe_router import MoERouterAnalysis
 
 # Bayesian metrics
 from uni_layer.metrics.bayesian.laplace_posterior import LaplacePosterior
+from uni_layer.metrics.efficiency.intrinsic_dim import IntrinsicDimensionality
+from uni_layer.metrics.efficiency.profiler import EfficiencyProfiler
+from uni_layer.metrics.efficiency.quantization_sensitivity import QuantizationSensitivity
+from uni_layer.metrics.efficiency.weight_distribution import WeightDistribution
 from uni_layer.metrics.information_theory.entropy import ActivationEntropy
 
 # Information theory metrics
@@ -61,6 +66,11 @@ __all__ = [
     "ResidualDropLayer",
     # Bayesian
     "LaplacePosterior",
+    # Efficiency
+    "EfficiencyProfiler",
+    "WeightDistribution",
+    "IntrinsicDimensionality",
+    "QuantizationSensitivity",
     # Security
     "AdversarialSensitivity",
     "ActivationAnomalyScore",

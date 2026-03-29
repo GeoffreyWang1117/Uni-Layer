@@ -3,6 +3,18 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.6.1] - 2026-03-28
+
+### Added
+- **Efficiency metrics** (`efficiency/` category — 4 new metrics):
+  - `EfficiencyProfiler`: per-layer FLOPs, param count, memory footprint, compute ratio
+  - `WeightDistribution`: sparsity, L1/L2 norms, rank ratio, outlier ratio, kurtosis
+  - `IntrinsicDimensionality`: MLE intrinsic dimension estimate (Levina-Bickel 2004)
+  - `QuantizationSensitivity`: INT8/FP16 quantization noise tolerance, activation range
+
+### Changed
+- Total metrics: 22 → 26 (added 4 efficiency metrics, 9 metric categories)
+
 ## [0.6.0] - 2026-03-28
 
 ### Added
