@@ -67,7 +67,7 @@ class TestCLIListMetrics:
         data = json.loads(out)
         assert "gradient_norm" in data
         assert "block_influence" in data
-        assert len(data) == 13
+        assert len(data) == 26
         assert data["gradient_norm"]["class"] == "GradientNorm"
         assert "primary_key" in data["gradient_norm"]
         assert "output_keys" in data["gradient_norm"]

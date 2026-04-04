@@ -61,19 +61,23 @@ def cmd_list_metrics(args):
     from uni_layer.core.schema import METRIC_OUTPUT_KEYS, METRIC_PRIMARY_KEYS
 
     categories = {
-        "Optimization": ["gradient_norm", "hessian_trace", "fisher_information"],
+        "Optimization": ["gradient_norm", "hessian_trace", "fisher_information", "wanda", "ig_sensitivity"],
         "Spectral": ["cka", "effective_rank", "ntk_trace"],
         "Information Theory": ["activation_entropy", "mutual_information"],
         "Representation": ["jacobian_rank", "block_influence"],
-        "Robustness": ["droplayer_robustness"],
+        "Robustness": ["droplayer_robustness", "residual_droplayer"],
         "Bayesian": ["laplace_posterior"],
-        "Architecture": ["attention_flow"],
+        "Efficiency": ["efficiency", "weight_distribution", "intrinsic_dim", "quantization_sensitivity"],
+        "Security": ["adversarial_sensitivity", "activation_anomaly", "membership_inference", "attention_path_trace"],
+        "Architecture": ["attention_flow", "moe_router", "diffusion_timestep"],
     }
 
     metric_classes = {
         "gradient_norm": "GradientNorm",
         "hessian_trace": "HessianTrace",
         "fisher_information": "FisherInformation",
+        "wanda": "WandaImportance",
+        "ig_sensitivity": "IGSensitivity",
         "cka": "CKA",
         "effective_rank": "EffectiveRank",
         "ntk_trace": "NTKTrace",
@@ -82,8 +86,19 @@ def cmd_list_metrics(args):
         "jacobian_rank": "JacobianRank",
         "block_influence": "BlockInfluence",
         "droplayer_robustness": "DropLayerRobustness",
+        "residual_droplayer": "ResidualDropLayer",
         "laplace_posterior": "LaplacePosterior",
+        "efficiency": "EfficiencyProfiler",
+        "weight_distribution": "WeightDistribution",
+        "intrinsic_dim": "IntrinsicDimensionality",
+        "quantization_sensitivity": "QuantizationSensitivity",
+        "adversarial_sensitivity": "AdversarialSensitivity",
+        "activation_anomaly": "ActivationAnomalyScore",
+        "membership_inference": "MembershipInferenceRisk",
+        "attention_path_trace": "AttentionPathTrace",
         "attention_flow": "AttentionFlow",
+        "moe_router": "MoERouterAnalysis",
+        "diffusion_timestep": "DiffusionTimestepAnalysis",
     }
 
     fmt = args.format if hasattr(args, "format") else "table"
@@ -131,24 +146,39 @@ def cmd_analyze(args):
     # Parse metrics
     from uni_layer.metrics import (
         CKA,
+        ActivationAnomalyScore,
         ActivationEntropy,
+        AdversarialSensitivity,
         AttentionFlow,
+        AttentionPathTrace,
         BlockInfluence,
+        DiffusionTimestepAnalysis,
         DropLayerRobustness,
         EffectiveRank,
+        EfficiencyProfiler,
         FisherInformation,
         GradientNorm,
         HessianTrace,
+        IGSensitivity,
+        IntrinsicDimensionality,
         JacobianRank,
         LaplacePosterior,
+        MembershipInferenceRisk,
+        MoERouterAnalysis,
         MutualInformation,
         NTKTrace,
+        QuantizationSensitivity,
+        ResidualDropLayer,
+        WandaImportance,
+        WeightDistribution,
     )
 
     METRIC_MAP = {
         "GradientNorm": GradientNorm,
         "HessianTrace": HessianTrace,
         "FisherInformation": FisherInformation,
+        "WandaImportance": WandaImportance,
+        "IGSensitivity": IGSensitivity,
         "CKA": CKA,
         "EffectiveRank": EffectiveRank,
         "NTKTrace": NTKTrace,
@@ -157,20 +187,34 @@ def cmd_analyze(args):
         "JacobianRank": JacobianRank,
         "BlockInfluence": BlockInfluence,
         "DropLayerRobustness": DropLayerRobustness,
+        "ResidualDropLayer": ResidualDropLayer,
         "LaplacePosterior": LaplacePosterior,
+        "EfficiencyProfiler": EfficiencyProfiler,
+        "WeightDistribution": WeightDistribution,
+        "IntrinsicDimensionality": IntrinsicDimensionality,
+        "QuantizationSensitivity": QuantizationSensitivity,
+        "AdversarialSensitivity": AdversarialSensitivity,
+        "ActivationAnomalyScore": ActivationAnomalyScore,
+        "MembershipInferenceRisk": MembershipInferenceRisk,
+        "AttentionPathTrace": AttentionPathTrace,
         "AttentionFlow": AttentionFlow,
+        "MoERouterAnalysis": MoERouterAnalysis,
+        "DiffusionTimestepAnalysis": DiffusionTimestepAnalysis,
     }
 
-    requested = [m.strip() for m in args.metrics.split(",")]
-    metric_objs = []
-    for name in requested:
-        if name not in METRIC_MAP:
-            print(
-                f"Error: Unknown metric '{name}'. Available: {', '.join(METRIC_MAP)}",
-                file=sys.stderr,
-            )
-            sys.exit(1)
-        metric_objs.append(METRIC_MAP[name](num_batches=num_batches))
+    use_preset = args.preset is not None
+
+    if not use_preset:
+        requested = [m.strip() for m in args.metrics.split(",")]
+        metric_objs = []
+        for name in requested:
+            if name not in METRIC_MAP:
+                print(
+                    f"Error: Unknown metric '{name}'. Available: {', '.join(METRIC_MAP)}",
+                    file=sys.stderr,
+                )
+                sys.exit(1)
+            metric_objs.append(METRIC_MAP[name](num_batches=num_batches))
 
     # Load model
     print(f"Loading model: {model_name}")
@@ -207,15 +251,42 @@ def cmd_analyze(args):
 
     analyzer = LayerAnalyzer(model, task_type="classification", device=device)
 
-    print(
-        f"Running {len(metric_objs)} metrics on {len(analyzer.layers)} layers (batches={num_batches})..."
-    )
-    contributions = analyzer.compute_metrics(
-        metrics=metric_objs,
-        data_loader=data_loader,
-        verbose=True,
-        num_batches=num_batches,
-    )
+    if use_preset:
+        print(
+            f"Running preset '{args.preset}' on {len(analyzer.layers)} layers (batches={num_batches})..."
+        )
+        contributions = analyzer.compute_metrics(
+            data_loader=data_loader,
+            preset=args.preset,
+            verbose=True,
+            num_batches=num_batches,
+        )
+    else:
+        print(
+            f"Running {len(metric_objs)} metrics on {len(analyzer.layers)} layers (batches={num_batches})..."
+        )
+        contributions = analyzer.compute_metrics(
+            metrics=metric_objs,
+            data_loader=data_loader,
+            verbose=True,
+            num_batches=num_batches,
+        )
+
+    # LayerProfile insights
+    if args.profile:
+        from uni_layer import LayerProfile
+
+        profile = LayerProfile(contributions, model_name=model_name)
+        print(f"\n{'=' * 70}")
+        print("LAYER PROFILE SUMMARY")
+        print(f"{'=' * 70}")
+        print(profile.summary())
+        print(f"\nRedundant layers: {profile.redundant_layers}")
+        print(f"Bottleneck layers: {profile.bottleneck_layers}")
+        pruning = profile.pruning_suggestion(target_ratio=0.3)
+        print(f"\nPruning suggestion (30%): {json.dumps(pruning, indent=2, default=str)}")
+        lora = profile.lora_suggestion(base_rank=8)
+        print(f"\nLoRA suggestion (rank=8): {json.dumps(lora, indent=2, default=str)}")
 
     # Output
     if args.output:
@@ -225,15 +296,28 @@ def cmd_analyze(args):
                 k: float(v) if isinstance(v, (int, float)) and v is not None else v
                 for k, v in metrics.items()
             }
+        if args.profile:
+            serializable["_profile"] = profile.to_dict()
         with open(args.output, "w") as f:
-            json.dump(serializable, f, indent=2)
+            json.dump(serializable, f, indent=2, default=str)
         print(f"\nResults saved to: {args.output}")
-    else:
-        # Print table to stdout
-        primary_keys = [m.name for m in metric_objs]
+    elif not args.profile:
+        # Print table to stdout (skip if --profile already printed insights)
         from uni_layer.core.schema import METRIC_PRIMARY_KEYS
 
-        pk_names = [METRIC_PRIMARY_KEYS.get(pk, pk) for pk in primary_keys]
+        # Collect all metric keys present in the results
+        all_metric_keys = set()
+        for layer_metrics in contributions.values():
+            all_metric_keys.update(
+                k for k in layer_metrics if k not in ("layer_idx", "layer_type")
+            )
+
+        # Use primary keys from schema for display
+        pk_names = sorted(
+            k for k in all_metric_keys if k in METRIC_PRIMARY_KEYS.values()
+        )
+        if not pk_names:
+            pk_names = sorted(all_metric_keys)
 
         header = f"{'Layer':<35} {'Type':<20}"
         for pk in pk_names:
@@ -254,16 +338,16 @@ def cmd_analyze(args):
             if has_data:
                 print(row)
 
-    # Ranking
-    if not args.output:
-        rank_key = pk_names[0]
-        ranked = analyzer.rank_layers(contributions, rank_key)
-        if ranked:
-            print(f"\nRanking by {rank_key} (descending):")
-            for i, (name, score) in enumerate(ranked[:10]):
-                print(f"  {i+1:>3}. {name:<35} {score:.6f}")
-            if len(ranked) > 10:
-                print(f"  ... and {len(ranked) - 10} more layers")
+        # Ranking by first primary key
+        if pk_names:
+            rank_key = pk_names[0]
+            ranked = analyzer.rank_layers(contributions, rank_key)
+            if ranked:
+                print(f"\nRanking by {rank_key} (descending):")
+                for i, (name, score) in enumerate(ranked[:10]):
+                    print(f"  {i+1:>3}. {name:<35} {score:.6f}")
+                if len(ranked) > 10:
+                    print(f"  ... and {len(ranked) - 10} more layers")
 
 
 def main():
@@ -307,6 +391,18 @@ Documentation: https://github.com/GeoffreyWang1117/Uni-Layer""",
         "--metrics",
         default="GradientNorm,BlockInfluence,EffectiveRank",
         help="Comma-separated metrics (default: GradientNorm,BlockInfluence,EffectiveRank)",
+    )
+    az.add_argument(
+        "-p",
+        "--preset",
+        choices=["quick", "llm_fast", "llm_full", "full"],
+        default=None,
+        help="Use a preset instead of -m (overrides --metrics)",
+    )
+    az.add_argument(
+        "--profile",
+        action="store_true",
+        help="Generate LayerProfile summary with actionable insights",
     )
     az.add_argument(
         "-o", "--output", default=None, help="Save results to JSON file (default: print table)"

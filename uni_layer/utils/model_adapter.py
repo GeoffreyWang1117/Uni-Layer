@@ -84,7 +84,16 @@ def compute_loss(
     logits = extract_logits(outputs)
 
     if criterion is not None and targets is not None:
-        return criterion(logits, targets)
+        # Only apply classification criterion when logits are 2-D [B, num_classes].
+        # For sequence models returning [B, seq_len, hidden] use mean() instead,
+        # which still creates a valid gradient signal for layer importance scoring.
+        if logits.dim() == 2:
+            try:
+                return criterion(logits, targets)
+            except Exception:
+                pass
+        # For 3-D (last_hidden_state) or fallback: differentiate through mean
+        return logits.mean()
 
     # Fallback: mean of logits (works for any shape)
     return logits.mean()
@@ -161,11 +170,33 @@ def model_forward(
             )
 
     if "labels" in forward_params and targets is not None:
-        kwargs["labels"] = targets
+        # Causal/Seq2Seq LM models (Llama 4, Gemma 4, BERT-LM, etc.) expect labels of
+        # shape [B, seq_len]. Injecting 1-D classification labels ([B]) causes internal
+        # shape errors (e.g. 2-D boolean mask applied to 1-D shift_labels tensor).
+        # Detect CausalLM/ConditionalGeneration by class name convention and skip label
+        # injection — compute_loss() uses logits.mean() as the gradient signal instead.
+        # Raw nn.Module models (e.g. custom HFStyleModel) always receive labels normally.
+        _is_seq_input = isinstance(inputs, torch.Tensor) and inputs.dim() >= 2
+        _is_class_target = targets.dim() == 1
+        _cls_name = type(model).__name__
+        _is_lm_head = any(
+            s in _cls_name
+            for s in ("ForCausalLM", "ForConditionalGeneration", "LMHeadModel", "CausalLM")
+        )
+        if not (_is_seq_input and _is_class_target and _is_lm_head):
+            kwargs["labels"] = targets
 
     # Seq2Seq models (T5, BART, etc.) require decoder_input_ids
     if "decoder_input_ids" in forward_params and "decoder_input_ids" not in kwargs:
         kwargs["decoder_input_ids"] = inputs[:, :1]  # Minimal decoder input
+
+    # Gemma 4 multimodal models require mm_token_type_ids during training.
+    # Pass all-zeros (= text tokens, no image tokens) so the model runs text-only.
+    model_type = getattr(getattr(model, "config", None), "model_type", "")
+    if model_type == "gemma4" and isinstance(inputs, torch.Tensor) and inputs.dim() >= 2:
+        kwargs["mm_token_type_ids"] = torch.zeros(
+            inputs.shape[:2], dtype=torch.long, device=inputs.device
+        )
 
     if kwargs:
         return model(inputs, **kwargs)

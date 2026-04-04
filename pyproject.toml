@@ -59,6 +59,10 @@ integrations = [
     "peft>=0.6.0",
     "transformers>=4.20.0",
 ]
+mcp = [
+    "mcp>=1.0.0",
+    "transformers>=4.20.0",
+]
 all = [
     "scipy>=1.7.0",
     "scikit-learn>=1.0.0",
@@ -75,6 +79,7 @@ all = [
 
 [project.scripts]
 uni-layer = "uni_layer.cli:main"
+uni-layer-mcp = "uni_layer.mcp_server:main"
 
 [project.urls]
 Homepage = "https://github.com/GeoffreyWang1117/Uni-Layer"

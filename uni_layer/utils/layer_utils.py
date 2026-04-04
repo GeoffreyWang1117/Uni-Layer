@@ -22,15 +22,31 @@ def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]
     - model.blocks                               (ViT)
     - model.backbone.layers                      (Mamba)
     - model.mixer.layers                         (Mamba-2)
+    - model.language_model.model.layers          (Gemma 4, Llama 4, Qwen3.5 multimodal)
+
+    For multimodal models, language model blocks are preferred over vision encoder
+    blocks when both are present.
 
     Returns:
         List of (dotted_path, module_list) tuples. Empty list if none found.
     """
     block_attrs = ("layer", "layers", "h", "blocks", "block")
+
+    # Priority sub-modules: walk these first before the generic BFS so that
+    # language model layers are discovered before vision encoder layers.
+    _LANGUAGE_SUBMODULE_NAMES = (
+        "language_model",  # Gemma 4, Llama 4, Mistral-3.1
+        "text_model",      # CLIP text branch
+        "model",           # LLaMA/Qwen decoder wrapper
+    )
+    # Non-language sub-modules whose blocks should be deprioritised when a language
+    # model block list is also present. Includes vision, audio, and image encoders.
+    _VISION_PATH_FRAGMENTS = ("vision", "visual", "image", "pixel", "audio", "speech")
+
     found = []
     found_ids = set()
 
-    # BFS up to 3 levels deep
+    # BFS up to 4 levels deep (increased from 3 for multimodal wrappers)
     queue = [(name, child) for name, child in model.named_children()]
     visited = set()
 
@@ -57,11 +73,31 @@ def _find_transformer_blocks(model: nn.Module) -> List[Tuple[str, nn.ModuleList]
                     found.append((f"{path}.{attr}", child))
                     found_ids.add(id(child))
 
-        # Go deeper (but not too deep)
-        if path.count(".") < 2:
+        # Go deeper (up to 4 levels for multimodal wrappers)
+        if path.count(".") < 3:
             for name, child in module.named_children():
                 if id(child) not in visited:
                     queue.append((f"{path}.{name}", child))
+
+    if not found:
+        return found
+
+    # ── Prioritise language model blocks over vision encoder blocks ──────────
+    # If we found block lists under both "language_model/text_model" paths AND
+    # "vision/visual/image" paths, keep only the language model ones.
+    lang_found = [
+        (p, ml) for p, ml in found
+        if any(s in p for s in _LANGUAGE_SUBMODULE_NAMES)
+        and not any(v in p for v in _VISION_PATH_FRAGMENTS)
+    ]
+    vision_found = [
+        (p, ml) for p, ml in found
+        if any(v in p for v in _VISION_PATH_FRAGMENTS)
+    ]
+
+    if lang_found and vision_found:
+        # Return only language model blocks; drop vision encoder blocks
+        return lang_found
 
     return found
 
@@ -114,12 +150,16 @@ def get_model_layers(model: nn.Module, include_types: Optional[list] = None) -> 
 
     For transformer models, extracts at **block level** (not individual Linear/LN).
     This works for any nesting depth:
-    - model.encoder.layer        (BERT)
-    - model.transformer.h        (GPT-2)
-    - model.layers               (LLaMA base)
-    - model.model.layers         (LLaMA CausalLM wrapper)
-    - model.gpt_neox.layers      (Pythia/GPT-NeoX)
-    - model.blocks               (ViT/Swin)
+    - model.encoder.layer               (BERT)
+    - model.transformer.h               (GPT-2)
+    - model.layers                      (LLaMA base)
+    - model.model.layers                (LLaMA CausalLM wrapper)
+    - model.gpt_neox.layers             (Pythia/GPT-NeoX)
+    - model.blocks                      (ViT/Swin)
+    - model.language_model.model.layers (Gemma 4, Llama 4, Qwen3.5 multimodal)
+
+    For multimodal models, language model blocks are automatically preferred
+    over vision encoder blocks.
 
     For non-transformer models, falls back to type-based extraction.
 
