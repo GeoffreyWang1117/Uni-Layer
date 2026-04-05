@@ -3,6 +3,37 @@
 All notable changes to this project will be documented in this file.
 Format based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [0.7.0] - 2026-04-04
+
+### Added
+- **38-family model compatibility** (was 33): verified PASS on all models released up to April 2026
+  - **Gemma 4 E2B / E4B / 31B / 26B-A4B** (Google, April 2026 — multimodal, incl. MoE variant)
+  - **Llama 4 Scout 17B-16E** (Meta, April 2026 — multimodal MoE)
+  - **DeepSeek-R1-Distill** and **Qwen3.5** (verified PASS)
+- **MCP Server** (`uni_layer/mcp_server.py`): FastMCP stdio server with 7 tools for AI-assistant integration
+  - `list_metrics`, `analyze_model`, `layer_profile`, `suggest_pruning`, `suggest_lora`, `suggest_quantization`, `security_audit`
+  - Install: `pip install uni-layer[mcp]`, entry point `uni-layer-mcp`
+- **CLI improvements**:
+  - All 26 metrics now exposed (was 13)
+  - `--preset {quick,llm_fast,llm_full,full}` for common analysis profiles
+  - `--profile` flag generates LayerProfile with pruning/LoRA/quantization recommendations
+- **Claude Code skill** (`~/.claude/skills/layer-analyze/`): `/layer-analyze` for in-editor analysis
+- **Test suite expansion**: 396 → 402 unit tests; new `test_model_compatibility.py` (17 tiny + 30 from-config families)
+
+### Fixed
+- **CausalLM label injection**: `model_forward()` now blocks 1-D classification labels from
+  `ForCausalLM` / `ForConditionalGeneration` models (detected by class name). Prevents
+  `IndexError: too many indices for tensor of dimension 1` in Gemma 4, Llama 4, etc.
+- **Gemma 4 training mode**: `model_forward()` auto-injects `mm_token_type_ids=zeros` for
+  `model_type=gemma4` so text-only analysis works without image tokens.
+- **Multimodal audio/vision encoder deprioritisation**: `_find_transformer_blocks()` now filters
+  `audio` and `speech` encoder paths in addition to `vision/visual/image/pixel`, preventing
+  Gemma 4 E4B's audio tower from shadowing `language_model.layers`.
+- **`AutoModelForCausalLM` preferred over `AutoModel`** in compatibility test harness: ensures
+  logit-head models (Llama 4, Gemma 4) return logits instead of `last_hidden_state`.
+- **3-D logit gradient path**: `compute_loss()` correctly uses `.mean()` for `[B, seq_len, vocab]`
+  tensors (already in 0.6.x) — now covered by regression tests.
+
 ## [0.6.1] - 2026-03-28
 
 ### Added

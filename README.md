@@ -5,7 +5,7 @@
 [![PyPI](https://img.shields.io/pypi/v/uni-layer.svg)](https://pypi.org/project/uni-layer/)
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://img.shields.io/badge/tests-413%20passed-brightgreen.svg)]()
+[![Tests](https://img.shields.io/badge/tests-402%20passed-brightgreen.svg)]()
 
 Uni-Layer is a PyTorch toolkit that scores every layer in your neural network across **26 metrics in 9 theoretical categories**. It tells you which layers matter most — so you can prune smarter, fine-tune better, distill more effectively, and audit model security.
 
@@ -443,14 +443,21 @@ cd Uni-Layer && pip install -e ".[dev]"
   - [x] AdversarialSensitivity, ActivationAnomalyScore, MembershipInferenceRisk, AttentionPathTrace
 - [x] Compression safety audit + `LayerProfile.security_report()`
 
-### v0.6.1 (Current)
+### v0.6.1
 - [x] Efficiency metrics (`efficiency/` category)
   - [x] EfficiencyProfiler: per-layer FLOPs, param count, memory, compute ratio
   - [x] WeightDistribution: sparsity, norms, rank deficiency, kurtosis
   - [x] IntrinsicDimensionality: MLE manifold dimension for LoRA rank selection
   - [x] QuantizationSensitivity: INT8/FP16 noise tolerance per layer
 
-### v0.7.0
+### v0.7.0 (Current)
+- [x] **38-family model compatibility** — Gemma 4 (E2B/E4B/31B/26B-A4B), Llama 4 Scout, DeepSeek-R1-Distill, Qwen3.5
+- [x] **MCP Server** — 7-tool FastMCP server for Claude Code / AI-assistant integration
+- [x] **CLI** — all 26 metrics exposed, `--preset`, `--profile` flags
+- [x] **Claude Code skill** — `/layer-analyze` in-editor analysis
+- [x] Bug fixes: CausalLM label injection, Gemma 4 `mm_token_type_ids`, audio tower deprioritisation
+
+### v0.8.0 (Planned)
 - [ ] KV Cache analysis for LLM inference
   - [ ] KV cache redundancy detection (cross-layer / cross-head similarity)
   - [ ] KV cache compression recommendations (per-layer budget allocation)

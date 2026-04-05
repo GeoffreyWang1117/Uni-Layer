@@ -320,14 +320,21 @@ cd Uni-Layer && pip install -e ".[dev]"
 - [x] 安全与红队分析指标（AdversarialSensitivity, ActivationAnomalyScore, MembershipInferenceRisk, AttentionPathTrace）
 - [x] 压缩安全审计 + `LayerProfile.security_report()`
 
-### v0.6.1（当前版本）
+### v0.6.1
 - [x] 效率指标（`efficiency/` 类别）
   - [x] EfficiencyProfiler：逐层 FLOPs、参数量、内存、计算占比
   - [x] WeightDistribution：稀疏度、范数、秩缺陷、峰度
   - [x] IntrinsicDimensionality：MLE 流形维度估计（LoRA 秩选择）
   - [x] QuantizationSensitivity：INT8/FP16 量化噪声容忍度
 
-### v0.7.0
+### v0.7.0（当前版本）
+- [x] **38 个模型家族兼容性** — Gemma 4（E2B/E4B/31B/26B-A4B）、Llama 4 Scout、DeepSeek-R1-Distill、Qwen3.5（2026年4月新发布模型全部验证通过）
+- [x] **MCP Server** — 7 工具 FastMCP 服务器，支持 Claude Code / AI 助手集成
+- [x] **CLI 增强** — 全量开放 26 个指标，新增 `--preset`、`--profile` 参数
+- [x] **Claude Code 技能** — `/layer-analyze` 编辑器内分析
+- [x] Bug 修复：CausalLM 标签注入、Gemma 4 `mm_token_type_ids`、音频塔去优先级
+
+### v0.8.0
 - [ ] LLM 推理 KV Cache 分析
   - [ ] KV cache 冗余检测（跨层 / 跨头相似度）
   - [ ] KV cache 压缩建议（逐层预算分配）

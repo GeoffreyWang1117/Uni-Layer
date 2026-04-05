@@ -136,6 +136,80 @@ class TestModelForward:
         out = model_forward(model, input_ids, labels)
         assert out.loss is not None
 
+    def test_causallm_1d_labels_not_injected(self):
+        """CausalLM-named models must NOT receive 1-D classification labels.
+
+        ForCausalLM / ForConditionalGeneration models expect labels of shape
+        [B, seq_len]. Injecting 1-D targets causes internal shape errors
+        (e.g. 2-D boolean mask applied to 1-D shift_labels).  model_forward
+        should detect the class name and skip label injection.
+        """
+        call_log = {}
+
+        class MockForCausalLM(nn.Module):
+            """Simulates a CausalLM: fails hard if given 1-D labels."""
+
+            def __init__(self):
+                super().__init__()
+                self.embed = nn.Embedding(100, 32)
+                self.fc = nn.Linear(32, 100)
+
+            def forward(self, input_ids, attention_mask=None, labels=None):
+                call_log["labels"] = labels
+                if labels is not None and labels.dim() == 1:
+                    raise IndexError("too many indices for tensor of dimension 1")
+                x = self.embed(input_ids).mean(1)
+                return MockModelOutput(logits=self.fc(x))
+
+        model = MockForCausalLM()
+        input_ids = torch.randint(0, 100, (4, 8))
+        labels_1d = torch.zeros(4, dtype=torch.long)
+
+        # Must NOT raise — model_forward should detect "ForCausalLM" and block labels
+        out = model_forward(model, input_ids, labels_1d)
+        assert call_log.get("labels") is None, "labels should not be passed to ForCausalLM"
+        assert out.logits is not None
+
+    def test_gemma4_mm_token_type_ids_injected(self):
+        """Gemma 4 (model_type='gemma4') must receive mm_token_type_ids=zeros."""
+        call_log = {}
+
+        class MockGemma4Config:
+            model_type = "gemma4"
+
+        class MockGemma4ForConditionalGeneration(nn.Module):
+            config = MockGemma4Config()
+
+            def __init__(self):
+                super().__init__()
+                self.embed = nn.Embedding(256000, 32)
+                self.fc = nn.Linear(32, 256000)
+
+            def forward(self, input_ids, attention_mask=None, mm_token_type_ids=None):
+                call_log["mm_token_type_ids"] = mm_token_type_ids
+                x = self.embed(input_ids).mean(1)
+                return MockModelOutput(logits=self.fc(x))
+
+        model = MockGemma4ForConditionalGeneration()
+        input_ids = torch.randint(0, 100, (2, 8))
+
+        out = model_forward(model, input_ids)
+        mm = call_log.get("mm_token_type_ids")
+        assert mm is not None, "mm_token_type_ids should be injected for gemma4"
+        assert mm.shape == (2, 8), f"Expected shape [2,8], got {mm.shape}"
+        assert mm.sum() == 0, "mm_token_type_ids should be all zeros (text-only)"
+
+    def test_compute_loss_3d_logits_gradient_flows(self):
+        """3-D logits from CausalLM should use .mean() and still produce gradients."""
+        # Simulate CausalLM output: [B, seq_len, vocab_size]
+        logits = torch.randn(2, 8, 1000, requires_grad=True)
+        targets = torch.zeros(2, dtype=torch.long)
+        out = MockModelOutput(logits=logits)
+        loss = compute_loss(out, targets, nn.CrossEntropyLoss())
+        assert loss.requires_grad
+        loss.backward()
+        assert logits.grad is not None
+
 
 # ---------- Tests for metrics with HF-style models ----------
 

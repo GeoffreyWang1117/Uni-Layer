@@ -460,3 +460,111 @@ class TestOutputFormat:
         validate_contributions({"layer0": {"layer_idx": 0, "layer_type": "linear"}})
         with pytest.raises(ValueError, match="missing 'layer_idx'"):
             validate_contributions({"layer0": {"layer_type": "linear"}})
+
+
+# ============================================================
+# Multimodal / CausalLM gradient path (v0.7.0)
+# ============================================================
+
+
+class TestCausalLMGradientPath:
+    """Verify gradient metrics work for CausalLM-style models (Gemma4, Llama4).
+
+    These models return 3-D logits [B, seq_len, vocab_size] and must NOT
+    receive 1-D classification labels.  compute_loss() falls back to
+    logits.mean() as the gradient signal.
+    """
+
+    @dataclass
+    class CausalLMOutput:
+        logits: Optional[torch.Tensor] = None
+        loss: Optional[torch.Tensor] = None
+
+    def _make_causal_lm(self, vocab_size: int = 1000):
+        """Return a minimal ForCausalLM mock with 3 transformer-style blocks."""
+
+        outer = self
+
+        class BlockLayer(nn.Module):
+            def __init__(self, hidden):
+                super().__init__()
+                self.attn = nn.Linear(hidden, hidden)
+                self.mlp = nn.Linear(hidden, hidden)
+
+            def forward(self, x):
+                return x + self.mlp(torch.relu(self.attn(x)))
+
+        class MockForCausalLM(nn.Module):
+            def __init__(self):
+                super().__init__()
+                self.embed = nn.Embedding(vocab_size, 32)
+                self.layers = nn.ModuleList([BlockLayer(32) for _ in range(3)])
+                self.lm_head = nn.Linear(32, vocab_size)
+
+            def forward(self, input_ids, attention_mask=None, labels=None):
+                if labels is not None and labels.dim() == 1:
+                    raise IndexError("too many indices for tensor of dimension 1")
+                x = self.embed(input_ids)  # [B, seq, 32]
+                for layer in self.layers:
+                    x = layer(x)
+                logits = self.lm_head(x)  # [B, seq, vocab]
+                return outer.CausalLMOutput(logits=logits)
+
+        return MockForCausalLM()
+
+    def test_gradient_norm_on_causal_lm(self):
+        """GradientNorm must produce non-zero gradients for ForCausalLM blocks."""
+        model = self._make_causal_lm()
+        input_ids = torch.randint(0, 100, (8, 16))
+        labels = torch.zeros(8, dtype=torch.long)
+        loader = DataLoader(TensorDataset(input_ids, labels), batch_size=4)
+
+        metric = GradientNorm(num_batches=2)
+        layer = model.layers[0]
+        result = metric.compute(
+            model=model,
+            layer=layer,
+            layer_name="layers.0",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
+            criterion=nn.CrossEntropyLoss(),
+        )
+        assert result["gradient_norm"] > 0, "Expected non-zero gradients via logits.mean() path"
+
+    def test_block_influence_on_causal_lm(self):
+        """BlockInfluence must work for 3-D logit output."""
+        model = self._make_causal_lm()
+        input_ids = torch.randint(0, 100, (8, 16))
+        labels = torch.zeros(8, dtype=torch.long)
+        loader = DataLoader(TensorDataset(input_ids, labels), batch_size=4)
+
+        metric = BlockInfluence(num_batches=1)
+        result = metric.compute(
+            model=model,
+            layer=model.layers[0],
+            layer_name="layers.0",
+            layer_idx=0,
+            data_loader=loader,
+            device="cpu",
+            criterion=None,
+        )
+        assert "block_influence" in result
+
+    def test_full_analyzer_on_causal_lm(self):
+        """LayerAnalyzer.compute_metrics must detect blocks and compute metrics end-to-end."""
+        model = self._make_causal_lm()
+        input_ids = torch.randint(0, 100, (16, 16))
+        labels = torch.zeros(16, dtype=torch.long)
+        loader = DataLoader(TensorDataset(input_ids, labels), batch_size=4)
+
+        analyzer = LayerAnalyzer(model, task_type="classification")
+        contributions = analyzer.compute_metrics(
+            metrics=[GradientNorm(num_batches=1), BlockInfluence(num_batches=1)],
+            data_loader=loader,
+            num_batches=1,
+            verbose=False,
+        )
+        # All 3 blocks should have gradient_norm
+        grad_layers = [k for k, v in contributions.items() if (v.get("gradient_norm") or 0) > 0]
+        assert len(grad_layers) == 3, f"Expected 3 grad layers, got {grad_layers}"
